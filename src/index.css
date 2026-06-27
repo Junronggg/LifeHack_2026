@@ -1,9 +1,11 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@400;500;600;700&display=swap");
 
 :root {
   --gold: #9a6a2f;
   --gold-light: #c9964a;
   --dark: #05070a;
+  --panel: #0a0d14;
 }
 
 html {
@@ -14,10 +16,11 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: #05070a;
-  color: white;
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  background: var(--dark);
+  color: #fff;
+  font-family: "IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 #root {
@@ -26,4 +29,58 @@ body {
 
 a {
   text-decoration: none;
+}
+
+::selection {
+  background: var(--gold);
+  color: #fff;
+}
+
+.ff-serif {
+  font-family: "IBM Plex Serif", Georgia, serif;
+}
+
+.ff-mono {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+/* Faint engineering grid used on accent sections */
+.grid-bg {
+  background-color: var(--panel);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 52px 52px;
+}
+
+@keyframes lhfade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes lhmarquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes lhmarquee2 {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-fade {
+  animation: lhfade 0.4s ease;
 }
