@@ -41,12 +41,16 @@ export async function submitRegistration(
     return;
   }
 
-  // We POST as text/plain on purpose: it counts as a "simple" CORS request, so
-  // the browser does NOT send a preflight that Apps Script can't answer. Apps
-  // Script reads e.postData.contents and parses the JSON itself. We don't read
-  // the response (the QR is delivered by email), which sidesteps CORS entirely.
+  // Google Apps Script does not return CORS headers, so a normal fetch would be
+  // blocked by the browser and throw — even though the request DID reach the
+  // script. We use mode: "no-cors" because we don't need to read the response
+  // (the QR code is delivered to the participant by email). The POST still
+  // arrives and the row is still written; the browser just won't expose the
+  // reply to us. text/plain is a CORS-safelisted content type, so this is
+  // allowed in no-cors mode and reaches Apps Script as e.postData.contents.
   await fetch(url, {
     method: "POST",
+    mode: "no-cors",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify(payload),
   });
