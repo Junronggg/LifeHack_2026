@@ -1,13 +1,17 @@
 # Registration backend — setup guide
 
 This connects the website's registration forms to a **shared Google Sheet** the
-whole committee can open, and emails each participant a **QR code** for check-in.
+whole committee can open. Registration sends a plain confirmation email. After
+registration closes, the committee runs one bulk function to send consolidated
+check-in IDs and QR links.
 
 There is **no server to run or deploy** — Google hosts everything for free.
 
 ```
 Website form ──POST──▶ Google Apps Script ──▶ Google Sheet (committee opens this)
-                              └──────────────▶ emails participant their QR
+                              └──────────────▶ registration confirmation
+
+After registration closes ──▶ sendAllCheckInEmails() ──▶ check-in details
 ```
 
 ---
@@ -29,9 +33,13 @@ Website form ──POST──▶ Google Apps Script ──▶ Google Sheet (comm
 1. In the Apps Script editor, choose the function **`setupSheets`** from the
    dropdown at the top, then click **Run**.
 2. Google asks you to **authorise** — approve it (it's your own script).
-3. Back in the Sheet you'll now see two tabs with headers:
-   - **Main** — `Timestamp, Name, Email, University, Type, Role, TeamCode, TeamName, Skills, QR_ID, CheckedIn`
-   - **Algo** — `Timestamp, Name, Email, University, Type, Codeforces, WarmupLevel, QR_ID, CheckedIn`
+3. Back in the Sheet you'll now see two tabs with headers. In addition to the
+   registration and QR fields, each tab includes:
+   - `ConfirmationEmailSent` — whether the initial confirmation was sent.
+   - `CheckInEmailSent` — whether final check-in details were sent.
+
+   If the tabs already existed, run `setupSheets` again after updating the
+   script. It adds these status columns without deleting existing registrations.
 
    > `Type` is auto-filled **NUS / External** from the email domain — that's how
    > you track the participant mix (use a `COUNTIF` to see the %). It is computed
@@ -62,7 +70,7 @@ Website form ──POST──▶ Google Apps Script ──▶ Google Sheet (comm
    (`.env.local` is git-ignored, so the URL never gets committed.)
 2. Restart the dev server (`npm run dev`) so Vite picks up the variable.
 3. Submit a test registration on the site → a new row appears in the Sheet and
-   the QR email arrives. 🎉
+   a plain registration-confirmation email arrives. No QR is sent yet.
 
 > **Without** this variable the forms still "work" in the browser (demo mode)
 > but **nothing is saved** — you'll see a warning in the browser console.
@@ -71,6 +79,22 @@ Website form ──POST──▶ Google Apps Script ──▶ Google Sheet (comm
 
 In the Sheet → **Share** → add committee Google accounts as **Viewer/Editor**.
 **Do not** make it public — it contains students' names and emails.
+
+## Step 7 — Close registration and send check-in details
+
+1. Stop or close public registration before sending the final batch.
+2. In Apps Script, run `auditDuplicateEmails` and inspect the execution log.
+   Clean up any duplicates that existed before duplicate enforcement was added.
+3. Run `sendAllCheckInEmails` manually.
+4. Check the execution log for sent/failed counts and remaining email quota.
+5. If quota or a transient error interrupts the batch, run the same function
+   again later. Rows with `CheckInEmailSent=TRUE` are skipped automatically.
+
+Participants registered for both Main and Algo receive one consolidated email
+when both rows are unsent at the time the batch runs.
+
+If an initial confirmation failed, run `sendMissingRegistrationConfirmations`.
+Only rows with `ConfirmationEmailSent` not set to `TRUE` are retried.
 
 ---
 

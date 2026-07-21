@@ -48,10 +48,48 @@ function getCountdown() {
 /* Static content                                                      */
 /* ------------------------------------------------------------------ */
 const facts = [
-  ["Dates", "22–23 Aug"],
+  ["Dates", "22–23 Aug 2026"],
   ["Duration", "24 hours"],
   ["Tracks", "Two"],
   ["Participants", "300–400"],
+];
+
+const PARTNERS = [
+  {
+    name: "Visa",
+    initials: "VI",
+    domain: "Digital payments & agentic commerce",
+    role: "Industry brief · judging",
+    accent: "#1a1f71",
+  },
+  {
+    name: "ViSenze",
+    initials: "VS",
+    domain: "AI commerce search & product discovery",
+    role: "Industry brief · workshop · judging",
+    accent: "#7c3aed",
+  },
+  {
+    name: "CSIT",
+    initials: "CS",
+    domain: "Cybersecurity, AI & secure systems",
+    role: "Algorithmic Hackathon partner",
+    accent: "#0f766e",
+  },
+  {
+    name: "Ecovolt",
+    initials: "EV",
+    domain: "AI, IoT & sustainable buildings",
+    role: "Industry challenge partner",
+    accent: "#15803d",
+  },
+  {
+    name: "NCS",
+    initials: "NC",
+    domain: "Data, AI, cyber, cloud & engineering",
+    role: "Supporting partner",
+    accent: "#b45309",
+  },
 ];
 
 type Question = {
@@ -322,6 +360,22 @@ function App() {
     return () => window.clearInterval(t);
   }, []);
 
+  useEffect(() => {
+    const sectionId = window.location.hash.slice(1);
+    if (!sectionId) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      const section = document.getElementById(sectionId);
+      if (!section) return;
+
+      const previousScrollBehavior = document.documentElement.style.scrollBehavior;
+      document.documentElement.style.scrollBehavior = "auto";
+      section.scrollIntoView();
+      document.documentElement.style.scrollBehavior = previousScrollBehavior;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
   /* ---- quiz helpers ---- */
   const advance = (answers: typeof scAnswers) => {
     const next = scIndex + 1;
@@ -470,9 +524,9 @@ function App() {
             LifeHack 2026
           </h1>
           <p className="mx-auto mt-[26px] max-w-[36em] text-[20px] leading-[1.55] text-slate-300">
-            Two tracks. One weekend. A sponsor-backed 24-hour build challenge and
-            a competitive-programming sprint — built around real engineering
-            problems.
+            Five industry partners. Five real briefs. One 24-hour build challenge
+            and a competitive-programming sprint — two ways to put your skills to
+            work on problems that matter.
           </p>
           <p className="ff-mono mt-4 mb-10 text-[13px] tracking-[0.06em] text-[#c9964a]">
             22–23 August 2026 &nbsp;·&nbsp; COM3 MPH, NUS School of Computing
@@ -582,17 +636,17 @@ function App() {
                 Main Hackathon
               </h3>
               <p className="mb-6 text-[16px] leading-[1.6] text-slate-300">
-                Teams spend 24 hours building against real-world problem
-                statements set by our industry sponsors. Judging is done by
-                representatives from the sponsoring companies, with a rubric
-                focused on practicality and real-world applicability.
+                Teams of 2–4 spend 24 hours building a working prototype around a
+                real brief from an industry partner. Expect hands-on engineering,
+                a public repository and demo, followed by walking-format judging
+                at your team's station.
               </p>
               <div className="mt-auto flex flex-col">
                 {[
                   ["Format", "24-hour build"],
-                  ["Problems", "Set by sponsors"],
-                  ["Team size", "To be announced"],
-                  ["Judged by", "Sponsor representatives"],
+                  ["Problems", "5 industry briefs"],
+                  ["Team size", "2–4 people"],
+                  ["Submission", "Prototype · repo · demo"],
                 ].map(([k, v]) => (
                   <div
                     key={k}
@@ -628,17 +682,17 @@ function App() {
                 Algorithmic Hackathon
               </h3>
               <p className="mb-6 text-[16px] leading-[1.6] text-slate-300">
-                A fast-paced coding sprint where you race the clock to crack a
-                series of algorithmic puzzles — the LeetCode- and ICPC-style
-                problems that test how well you really know data structures and
-                algorithms.
+                An individual, proctored Codeforces contest for participants who
+                enjoy rigorous problem solving. Race through algorithmic
+                challenges using your own laptop, with standings determined by
+                problems solved and time.
               </p>
               <div className="mt-auto flex flex-col">
                 {[
                   ["Format", "~2h 45m sprint"],
                   ["Platform", "Codeforces"],
                   ["Ranked by", "Problems solved & time"],
-                  ["Seats", "~100 · warm-up"],
+                  ["When", "23 Aug · 16:30"],
                 ].map(([k, v]) => (
                   <div
                     key={k}
@@ -976,57 +1030,53 @@ function App() {
           <div>
             <div className={`${eyebrow} mb-4`}>Sponsors &amp; partners</div>
             <h2
-              className={`${sectionTitle} max-w-[14em]`}
+              className={`${sectionTitle} max-w-[16em]`}
               style={{ fontSize: "clamp(28px,3.6vw,40px)" }}
             >
-              Built alongside industry. Partners announced soon.
+              Five partners. Five real-world challenge domains.
             </h2>
           </div>
-          <span className="ff-mono rounded-full border border-white/15 px-3.5 py-2 text-[11px] tracking-[0.08em] text-slate-400">
-            Partnerships in progress
+          <span className="ff-mono rounded-full border border-[#c9964a]/30 bg-[#9a6a2f]/10 px-3.5 py-2 text-[11px] tracking-[0.08em] text-[#c9964a]">
+            2026 partner lineup
           </span>
         </div>
 
-        <div className="mb-3.5 ff-mono text-[11px] uppercase tracking-[0.12em] text-white">
-          Title sponsor
-        </div>
-        <div
-          className="mb-[34px] flex h-[118px] items-center justify-center rounded-2xl border-[1.5px] border-dashed border-white/20"
-          style={{
-            background:
-              "repeating-linear-gradient(135deg,rgba(255,255,255,0.02) 0 12px,transparent 12px 24px)",
-          }}
-        >
-          <span className="ff-mono text-[13px] text-slate-500">
-            To be announced
-          </span>
-        </div>
+        <p className="mb-8 max-w-[52em] text-[16px] leading-[1.65] text-slate-400">
+          Our partners bring problem statements, technical context, judges and
+          support across commerce, cybersecurity, sustainability and enterprise
+          technology. Full briefs are declassified when the Main Hackathon begins.
+        </p>
 
-        <div className="mb-3.5 ff-mono text-[11px] uppercase tracking-[0.12em] text-white">
-          Gold
-        </div>
-        <div className="mb-[30px] grid grid-cols-2 gap-[18px] md:grid-cols-3">
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className="flex h-[92px] items-center justify-center rounded-xl border-[1.5px] border-dashed border-white/15"
+        <div className="grid gap-[18px] sm:grid-cols-2 lg:grid-cols-3">
+          {PARTNERS.map((partner, i) => (
+            <article
+              key={partner.name}
+              className={`group rounded-2xl border border-white/12 bg-white/[0.025] p-6 transition hover:-translate-y-0.5 hover:border-white/25 ${
+                i === PARTNERS.length - 1 ? "sm:col-span-2 lg:col-span-1" : ""
+              }`}
             >
-              <span className="ff-mono text-[12px] text-slate-600">Logo slot</span>
-            </div>
-          ))}
-        </div>
-
-        <div className="mb-3.5 ff-mono text-[11px] uppercase tracking-[0.12em] text-white">
-          Silver
-        </div>
-        <div className="grid grid-cols-2 gap-[18px] md:grid-cols-4">
-          {[0, 1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="flex h-[74px] items-center justify-center rounded-xl border-[1.5px] border-dashed border-white/12"
-            >
-              <span className="ff-mono text-[11px] text-slate-600">Logo slot</span>
-            </div>
+              <div className="mb-7 flex items-center justify-between gap-4">
+                <span
+                  className="ff-mono inline-flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 text-[13px] font-medium tracking-[0.08em] text-white"
+                  style={{ backgroundColor: `${partner.accent}55` }}
+                  aria-hidden="true"
+                >
+                  {partner.initials}
+                </span>
+                <span className="ff-mono text-[10px] uppercase tracking-[0.12em] text-slate-600">
+                  Partner {String(i + 1).padStart(2, "0")}
+                </span>
+              </div>
+              <h3 className="ff-serif text-[27px] font-semibold text-white">
+                {partner.name}
+              </h3>
+              <p className="mt-2 min-h-[48px] text-[14.5px] leading-[1.55] text-slate-400">
+                {partner.domain}
+              </p>
+              <div className="ff-mono mt-5 border-t border-white/10 pt-4 text-[10.5px] uppercase tracking-[0.1em] text-[#c9964a]">
+                {partner.role}
+              </div>
+            </article>
           ))}
         </div>
       </section>
@@ -1039,22 +1089,22 @@ function App() {
               Judges
             </div>
             <h3 className="ff-serif mb-3 text-[25px] font-semibold text-white">
-              Judged by industry partners
+              Industry, faculty and alumni
             </h3>
             <p className="mb-[22px] text-[15.5px] leading-[1.6] text-slate-300">
-              Main Hackathon submissions are evaluated by representatives from
-              the sponsoring companies. The judging panel is confirmed alongside
-              our partners.
+              Judges circulate through the venue for live demos and technical
+              questions. Finalists are then reviewed by a panel drawn from our
+              partner companies, NUS faculty and alumni.
             </p>
             <div className="flex flex-wrap gap-3">
-              {[0, 1].map((i) => (
+              {["Industry", "NUS faculty", "Alumni"].map((label) => (
                 <div
-                  key={i}
+                  key={label}
                   className="flex items-center gap-[11px] rounded-[10px] border border-white/12 px-3.5 py-2.5"
                 >
-                  <span className="h-[34px] w-[34px] rounded-full border-[1.5px] border-dashed border-white/20 bg-white/5" />
-                  <span className="ff-mono text-[12px] text-slate-500">
-                    To be announced
+                  <span className="h-2 w-2 rounded-full bg-[#c9964a]" />
+                  <span className="ff-mono text-[12px] text-slate-400">
+                    {label}
                   </span>
                 </div>
               ))}
@@ -1066,12 +1116,13 @@ function App() {
               Problem statements
             </div>
             <h3 className="ff-serif mb-3 text-[25px] font-semibold text-white">
-              Revealed live, on the day
+              Five briefs, revealed live
             </h3>
             <p className="mb-[22px] text-[15.5px] leading-[1.6] text-slate-300">
-              Problem statements are announced on stage during the event and
-              published here within minutes of the reveal. Bookmark this page —
-              they'll appear right here.
+              Teams will tackle partner-backed challenges spanning agentic
+              commerce, AI product discovery, secure technology, sustainable
+              buildings and enterprise engineering. The full statements appear
+              here as the 24-hour countdown begins.
             </p>
             <div className="flex items-center gap-3.5 rounded-xl border-[1.5px] border-dashed border-[#c9964a]/35 p-[22px]">
               <span
