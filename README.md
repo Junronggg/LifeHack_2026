@@ -1,5 +1,20 @@
 # React + TypeScript + Vite
 
+## Google Analytics 4
+
+The site initializes GA4 only in production and only when a Measurement ID is
+provided at build time.
+
+1. In Google Analytics, create/select the GA4 property and web data stream.
+2. Copy the Measurement ID (it starts with `G-`).
+3. Set `VITE_GA_MEASUREMENT_ID=G-...` in the production build environment.
+4. Rebuild and deploy the site.
+5. Open the deployed site and confirm the visit in Analytics **Reports > Realtime**.
+
+For a local production-build check, put the value in `.env.production` and run
+`npm run build`. Do not add both a Google tag snippet and this integration, or
+page views may be counted twice.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

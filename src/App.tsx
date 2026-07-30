@@ -54,6 +54,7 @@ const facts = [
   ["Participants", "300–400"],
 ];
 
+/* TODO: Restore this data together with the sponsor section once partners are confirmed.
 const PARTNERS = [
   {
     name: "Visa",
@@ -91,6 +92,7 @@ const PARTNERS = [
     accent: "#b45309",
   },
 ];
+*/
 
 type Question = {
   q: string;
@@ -487,7 +489,7 @@ function App() {
               ["About", "#about"],
               ["Tracks", "#tracks"],
               ["Algorithmic", "#algorithmic"],
-              ["Sponsors", "#sponsors"],
+              // ["Sponsors", "#sponsors"], // Restore when sponsors are confirmed.
               ["Club", "#organiser"],
               ["FAQ", "#faq"],
             ].map(([label, href]) => (
@@ -1024,7 +1026,7 @@ function App() {
         </div>
       </section>
 
-      {/* ---------------- SPONSORS ---------------- */}
+      {/* TODO: Restore this section once sponsors are confirmed.
       <section id="sponsors" className="mx-auto max-w-[1180px] px-7 py-20">
         <div className="mb-[38px] flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -1080,6 +1082,7 @@ function App() {
           ))}
         </div>
       </section>
+      */}
 
       {/* ---------------- JUDGES & PROBLEM STATEMENTS ---------------- */}
       <section className="border-t border-white/10 bg-white/[0.02]">

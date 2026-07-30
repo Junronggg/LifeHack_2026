@@ -2,7 +2,7 @@ const navItems = [
   { label: 'About', href: '#about' },
   { label: 'Tracks', href: '#tracks' },
   { label: 'Timeline', href: '#timeline' },
-  { label: 'Sponsors', href: '#sponsors' },
+  // { label: 'Sponsors', href: '#sponsors' }, // Restore when sponsors are confirmed.
   { label: 'FAQ', href: '#faq' },
 ];
 

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://lifehack2026.nuscomputing.com/sitemap.xml
