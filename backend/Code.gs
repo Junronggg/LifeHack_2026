@@ -1,8 +1,9 @@
 /**
  * LifeHack 2026 — Registration backend (Google Apps Script)
  *
- * Registration sends a plain confirmation email only.
- * After registration closes, run sendAllCheckInEmails() manually.
+ * Main registration immediately emails the participant their check-in QR.
+ * Algorithmic registration sends confirmation only; its QR is sent later with
+ * sendAllCheckInEmails().
  *
  * Duplicate rule:
  * - An email can appear only once in Main and only once in Algo.
@@ -95,7 +96,9 @@ function doPost(e) {
           code: "ALREADY_REGISTERED",
           error:
             "This email is already registered for the " +
-            (isAlgo ? "Algorithmic Hackathon." : "Main Hackathon."),
+            (isAlgo
+              ? "Algorithmic Hackathon."
+              : "Main Hackathon and cannot join another Main team."),
         });
       }
 
@@ -104,16 +107,25 @@ function doPost(e) {
       lock.releaseLock();
     }
 
-    // A failed confirmation does not invalidate or duplicate the registration.
+    // A failed email does not invalidate or duplicate the saved registration.
     var confirmationSent = false;
+    var checkInSent = false;
 
     try {
-      sendRegistrationConfirmation(email, name, isAlgo, data);
+      if (isAlgo) {
+        sendAlgorithmicRegistrationConfirmation(email, name);
+      } else {
+        sendMainRegistrationWithQr(email, name, data, record.QR_ID);
+        setCellByHeader(sheet, rowNumber, "CheckInEmailSent", true);
+        checkInSent = true;
+      }
+
       setCellByHeader(sheet, rowNumber, "ConfirmationEmailSent", true);
       confirmationSent = true;
     } catch (mailError) {
       console.error(
-        "Registration saved, but confirmation failed for " +
+        "Registration saved, but " +
+        (isAlgo ? "confirmation" : "QR") + " email failed for " +
         maskEmail(email) + ": " + String(mailError)
       );
     }
@@ -121,6 +133,7 @@ function doPost(e) {
     return jsonOut({
       ok: true,
       confirmationEmailSent: confirmationSent,
+      checkInEmailSent: checkInSent,
     });
   } catch (error) {
     console.error(error && error.stack ? error.stack : String(error));
@@ -136,13 +149,15 @@ function doGet() {
   return jsonOut({
     ok: true,
     service: EVENT_NAME + " registration",
-    workflow: "confirmation-then-bulk-checkin-v1",
+    workflow: "main-immediate-qr-algo-confirmation-v3",
   });
 }
 
-// Plain registration confirmation. No QR or check-in ID is sent here.
-function sendRegistrationConfirmation(email, name, isAlgo, data) {
-  var trackName = isAlgo ? "Algorithmic Hackathon" : "Main Hackathon";
+// Main confirmation containing the QR inline and as a PNG attachment.
+function sendMainRegistrationWithQr(email, name, data, qrId) {
+  var trackName = "Main Hackathon";
+  var qrUrl = getQrUrl(qrId);
+  var qrBlob = fetchQrBlob(qrId, trackName);
   var lines = [
     "Hi " + (name || "there") + ",",
     "",
@@ -151,36 +166,169 @@ function sendRegistrationConfirmation(email, name, isAlgo, data) {
     "",
     "Event date: " + EVENT_DATE,
     "Location: " + EVENT_LOCATION,
+    "Check-in ID: " + qrId,
   ];
 
-  if (!isAlgo) {
-    if (data.role) lines.push("Registration role: " + formatRole(data.role));
-    if (data.teamName) lines.push("Team name: " + data.teamName);
-    if (data.teamCode) lines.push("Team code: " + data.teamCode);
-  }
+  if (data.role) lines.push("Registration role: " + formatRole(data.role));
+  if (data.teamName) lines.push("Team name: " + data.teamName);
+  if (data.teamCode) lines.push("Team code: " + data.teamCode);
 
   lines.push(
     "",
-    "Your check-in details will be sent separately after registration closes.",
+    "Your check-in QR code is attached to this email.",
+    "QR code fallback link: " + qrUrl,
+    "Keep this email and present the QR code at check-in.",
     "",
     "See you there,",
     "NUS Computing Club"
   );
 
+  var detailHtml = "";
+  if (data.role) {
+    detailHtml += "<li><strong>Registration role:</strong> " +
+      escapeHtml(formatRole(data.role)) + "</li>";
+  }
+  if (data.teamName) {
+    detailHtml += "<li><strong>Team name:</strong> " +
+      escapeHtml(data.teamName) + "</li>";
+  }
+  if (data.teamCode) {
+    detailHtml += "<li><strong>Team code:</strong> " +
+      escapeHtml(data.teamCode) + "</li>";
+  }
+
+  var htmlBody =
+    '<div style="font-family:Arial,sans-serif;line-height:1.6;color:#172033">' +
+      "<p>Hi " + escapeHtml(name || "there") + ",</p>" +
+      "<p>Your registration for the <strong>" + escapeHtml(trackName) +
+        "</strong> at <strong>" + escapeHtml(EVENT_NAME) +
+        "</strong> has been received.</p>" +
+      "<ul>" +
+        "<li><strong>Event date:</strong> " + escapeHtml(EVENT_DATE) + "</li>" +
+        "<li><strong>Location:</strong> " + escapeHtml(EVENT_LOCATION) + "</li>" +
+        detailHtml +
+      "</ul>" +
+      '<div style="margin:24px 0;padding:20px;border:1px solid #d9c39d;' +
+        'border-radius:12px;text-align:center;background:#faf8f4">' +
+        '<p style="margin:0 0 12px"><strong>Your check-in QR code</strong></p>' +
+        '<img src="cid:checkInQr" width="240" height="240" ' +
+          'alt="LifeHack 2026 check-in QR code" />' +
+        '<p style="margin:12px 0 0;font-size:12px;color:#596273">Check-in ID: ' +
+          escapeHtml(qrId) + "</p>" +
+      "</div>" +
+      "<p>Keep this email and present the QR code at check-in. A PNG copy is " +
+        "also attached in case your email client blocks inline images.</p>" +
+      "<p>See you there,<br>NUS Computing Club</p>" +
+    "</div>";
+
   MailApp.sendEmail({
     to: email,
-    subject: EVENT_NAME + " registration confirmation",
+    subject: "Your " + EVENT_NAME + " registration and check-in QR",
     body: lines.join("\n"),
+    htmlBody: htmlBody,
+    inlineImages: {
+      checkInQr: qrBlob,
+    },
+    attachments: [qrBlob.copyBlob()],
     name: EVENT_NAME,
   });
+}
+
+// Algorithmic registration confirmation. The QR is intentionally not included.
+function sendAlgorithmicRegistrationConfirmation(email, name) {
+  var trackName = "Algorithmic Hackathon";
+  var lines = [
+    "Hi " + (name || "there") + ",",
+    "",
+    "Your registration for the " + trackName + " at " + EVENT_NAME +
+      " has been received.",
+    "",
+    "Event date: " + EVENT_DATE,
+    "Location: " + EVENT_LOCATION,
+    "",
+    "Your check-in QR code and final contest details will be emailed separately.",
+    "",
+    "See you there,",
+    "NUS Computing Club",
+  ];
+
+  var htmlBody =
+    '<div style="font-family:Arial,sans-serif;line-height:1.6;color:#172033">' +
+      "<p>Hi " + escapeHtml(name || "there") + ",</p>" +
+      "<p>Your registration for the <strong>" + trackName +
+        "</strong> at <strong>" + escapeHtml(EVENT_NAME) +
+        "</strong> has been received.</p>" +
+      "<ul>" +
+        "<li><strong>Event date:</strong> " + escapeHtml(EVENT_DATE) + "</li>" +
+        "<li><strong>Location:</strong> " + escapeHtml(EVENT_LOCATION) + "</li>" +
+      "</ul>" +
+      "<p>Your check-in QR code and final contest details will be emailed " +
+        "separately.</p>" +
+      "<p>See you there,<br>NUS Computing Club</p>" +
+    "</div>";
+
+  MailApp.sendEmail({
+    to: email,
+    subject: EVENT_NAME + " Algorithmic Hackathon registration confirmation",
+    body: lines.join("\n"),
+    htmlBody: htmlBody,
+    name: EVENT_NAME,
+  });
+}
+
+function getQrUrl(qrId) {
+  return "https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=" +
+    encodeURIComponent(qrId);
+}
+
+function fetchQrBlob(qrId, label) {
+  var response = UrlFetchApp.fetch(getQrUrl(qrId), {
+    muteHttpExceptions: true,
+  });
+
+  if (response.getResponseCode() !== 200) {
+    throw new Error(
+      "QR image service returned HTTP " + response.getResponseCode()
+    );
+  }
+
+  return response
+    .getBlob()
+    .setName(
+      EVENT_NAME.replace(/\s+/g, "-") + "-" +
+      String(label).replace(/\s+/g, "-") + "-QR.png"
+    );
+}
+
+// Run once from the Apps Script editor after deploying this update. This
+// requests the MailApp/UrlFetch permissions and sends a harmless test QR to the
+// script owner's Google account.
+function testImmediateQrEmail() {
+  var ownerEmail = Session.getEffectiveUser().getEmail();
+  if (!ownerEmail) {
+    throw new Error("Could not determine the script owner's email address.");
+  }
+
+  sendMainRegistrationWithQr(
+    ownerEmail,
+    "Test Participant",
+    {
+      role: "solo",
+      teamName: "QR delivery test",
+      teamCode: "TEST-ONLY",
+    },
+    Utilities.getUuid()
+  );
+
+  console.log("Test QR email sent to " + maskEmail(ownerEmail));
 }
 
 /**
  * Run manually ONCE after registration closes.
  *
- * Main and Algo rows are grouped by email. A participant in both tracks gets
- * one consolidated email. CheckInEmailSent prevents repeat sends and lets the
- * batch safely resume after quota or transient failures.
+ * Sends Algorithmic QR details after their confirmation-only signup. It also
+ * recovers any legacy/failed Main row whose immediate QR was not marked sent.
+ * CheckInEmailSent prevents repeat sends and lets the batch safely resume.
  */
 function sendAllCheckInEmails() {
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
@@ -225,6 +373,16 @@ function sendAllCheckInEmails() {
           "CheckInEmailSent",
           true
         );
+
+        // A recovered Main QR email also serves as its registration email.
+        if (participant.rows[j].trackName === "Main Hackathon") {
+          setCellByHeader(
+            participant.rows[j].sheet,
+            participant.rows[j].rowNumber,
+            "ConfirmationEmailSent",
+            true
+          );
+        }
       }
 
       sent++;
@@ -283,6 +441,7 @@ function collectCheckInRows(sheet, trackName, headers, recipients) {
     recipients[email].rows.push({
       sheet: sheet,
       rowNumber: rows[i].rowNumber,
+      trackName: trackName,
     });
   }
 }
@@ -368,16 +527,33 @@ function sendMissingRegistrationConfirmations() {
       }
 
       try {
-        sendRegistrationConfirmation(
-          email,
-          record.Name || "there",
-          config.isAlgo,
-          {
-            role: record.Role || "",
-            teamName: record.TeamName || "",
-            teamCode: record.TeamCode || "",
+        if (config.isAlgo) {
+          sendAlgorithmicRegistrationConfirmation(
+            email,
+            record.Name || "there"
+          );
+        } else {
+          if (!record.QR_ID) {
+            record.QR_ID = Utilities.getUuid();
+            setCellByHeader(
+              config.sheet,
+              rows[i].rowNumber,
+              "QR_ID",
+              record.QR_ID
+            );
           }
-        );
+
+          sendMainRegistrationWithQr(
+            email,
+            record.Name || "there",
+            {
+              role: record.Role || "",
+              teamName: record.TeamName || "",
+              teamCode: record.TeamCode || "",
+            },
+            record.QR_ID
+          );
+        }
 
         setCellByHeader(
           config.sheet,
@@ -385,6 +561,14 @@ function sendMissingRegistrationConfirmations() {
           "ConfirmationEmailSent",
           true
         );
+        if (!config.isAlgo) {
+          setCellByHeader(
+            config.sheet,
+            rows[i].rowNumber,
+            "CheckInEmailSent",
+            true
+          );
+        }
         sent++;
       } catch (error) {
         failed++;
@@ -562,6 +746,15 @@ function isTrue(value) {
 function formatRole(role) {
   var value = String(role || "");
   return value ? value.charAt(0).toUpperCase() + value.slice(1) : "";
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function maskEmail(email) {

@@ -2,7 +2,8 @@
  * Registration submission.
  *
  * Sends the form data to a Google Apps Script web app, which appends a row to a
- * shared Google Sheet and emails the participant their check-in QR code.
+ * shared Google Sheet. Main participants receive their QR immediately;
+ * Algorithmic participants receive confirmation only.
  *
  * Set the endpoint in `.env.local`:
  *   VITE_APPS_SCRIPT_URL=https://script.google.com/macros/s/XXXX/exec

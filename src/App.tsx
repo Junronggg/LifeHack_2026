@@ -1215,9 +1215,9 @@ function App() {
                   You're registered!
                 </h3>
                 <p className="mx-auto mb-6 max-w-[32em] text-[15.5px] leading-[1.6] text-slate-300">
-                  Thanks for signing up for LifeHack 2026. Your check-in QR code
-                  is on its way to your inbox — bring it on event day for fast,
-                  contactless check-in.
+                  {regTab === "main"
+                    ? "Thanks for signing up for LifeHack 2026. Your check-in QR code is on its way to your inbox — bring it on event day for fast, contactless check-in."
+                    : "Thanks for signing up for the Algorithmic Hackathon. A confirmation email is on its way to your inbox; your check-in QR and final contest details will be sent separately."}
                 </p>
                 <button
                   onClick={resetReg}

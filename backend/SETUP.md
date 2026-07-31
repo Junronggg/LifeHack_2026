@@ -1,17 +1,15 @@
 # Registration backend — setup guide
 
 This connects the website's registration forms to a **shared Google Sheet** the
-whole committee can open. Registration sends a plain confirmation email. After
-registration closes, the committee runs one bulk function to send consolidated
-check-in IDs and QR links.
+whole committee can open. Main participants immediately receive their check-in
+QR inline and attached as a PNG. Algorithmic participants receive confirmation
+only; their QR is sent later.
 
 There is **no server to run or deploy** — Google hosts everything for free.
 
 ```
-Website form ──POST──▶ Google Apps Script ──▶ Google Sheet (committee opens this)
-                              └──────────────▶ registration confirmation
-
-After registration closes ──▶ sendAllCheckInEmails() ──▶ check-in details
+Main form ──POST──▶ Google Apps Script ──▶ Main sheet + attached QR email
+Algo form ──POST──▶ Google Apps Script ──▶ Algo sheet + confirmation email
 ```
 
 ---
@@ -69,8 +67,9 @@ After registration closes ──▶ sendAllCheckInEmails() ──▶ check-in de
 
    (`.env.local` is git-ignored, so the URL never gets committed.)
 2. Restart the dev server (`npm run dev`) so Vite picks up the variable.
-3. Submit a test registration on the site → a new row appears in the Sheet and
-   a plain registration-confirmation email arrives. No QR is sent yet.
+3. Test each track with an unused email:
+   - Main → a Main row and an email with the QR inline and attached.
+   - Algorithmic → an Algo row and a confirmation email without a QR.
 
 > **Without** this variable the forms still "work" in the browser (demo mode)
 > but **nothing is saved** — you'll see a warning in the browser console.
@@ -80,21 +79,21 @@ After registration closes ──▶ sendAllCheckInEmails() ──▶ check-in de
 In the Sheet → **Share** → add committee Google accounts as **Viewer/Editor**.
 **Do not** make it public — it contains students' names and emails.
 
-## Step 7 — Close registration and send check-in details
+## Step 7 — Audit email delivery
 
-1. Stop or close public registration before sending the final batch.
-2. In Apps Script, run `auditDuplicateEmails` and inspect the execution log.
+1. In Apps Script, run `auditDuplicateEmails` and inspect the execution log.
    Clean up any duplicates that existed before duplicate enforcement was added.
-3. Run `sendAllCheckInEmails` manually.
-4. Check the execution log for sent/failed counts and remaining email quota.
-5. If quota or a transient error interrupts the batch, run the same function
-   again later. Rows with `CheckInEmailSent=TRUE` are skipped automatically.
+2. Check the status columns:
+   - Main success: `ConfirmationEmailSent=TRUE`, `CheckInEmailSent=TRUE`.
+   - Algo success: `ConfirmationEmailSent=TRUE`, `CheckInEmailSent=FALSE`.
+3. Run `sendMissingRegistrationConfirmations` to retry failed initial emails.
+4. When Algorithmic QRs are ready to send, run `sendAllCheckInEmails`. It also
+   recovers any legacy/failed Main QR rows. Rows with
+   `CheckInEmailSent=TRUE` are skipped automatically.
 
-Participants registered for both Main and Algo receive one consolidated email
-when both rows are unsent at the time the batch runs.
-
-If an initial confirmation failed, run `sendMissingRegistrationConfirmations`.
-Only rows with `ConfirmationEmailSent` not set to `TRUE` are retried.
+An email may appear once in each tab, allowing the same participant to enter
+both tracks. Within Main, the duplicate check prevents the same email from
+creating or joining more than one team.
 
 ---
 
@@ -102,6 +101,11 @@ Only rows with `ConfirmationEmailSent` not set to `TRUE` are retried.
 
 - **Change a deployment** (after editing `Code.gs`): Deploy → **Manage
   deployments** → ✏️ edit → **Deploy** (keeps the same URL).
+- **New QR permission:** the first run after this update may ask the script
+  owner to authorise access to the external QR image service. Select
+  `testImmediateQrEmail` in the Apps Script function dropdown and run it once.
+  Approve the requested permissions and confirm that the test QR reaches the
+  script owner's inbox before testing the public form.
 - **Export to Excel:** File → Download → Microsoft Excel — this is also your
   manual / fallback check-in lookup on event day.
 - **Team size limits & the 30% external cap:** these are intentionally *tracked*
