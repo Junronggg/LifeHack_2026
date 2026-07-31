@@ -71,6 +71,10 @@ Algo form ──POST──▶ Google Apps Script ──▶ Algo sheet + confirma
    - Main → a Main row and an email with the QR inline and attached.
    - Algorithmic → an Algo row and a confirmation email without a QR.
 
+   To test only the Algorithmic email template, run
+   `testAlgorithmicConfirmationEmail` from the Apps Script editor. It sends a
+   confirmation to the script owner's account without adding a Sheet row.
+
 > **Without** this variable the forms still "work" in the browser (demo mode)
 > but **nothing is saved** — you'll see a warning in the browser console.
 
@@ -87,6 +91,8 @@ In the Sheet → **Share** → add committee Google accounts as **Viewer/Editor*
    - Main success: `ConfirmationEmailSent=TRUE`, `CheckInEmailSent=TRUE`.
    - Algo success: `ConfirmationEmailSent=TRUE`, `CheckInEmailSent=FALSE`.
 3. Run `sendMissingRegistrationConfirmations` to retry failed initial emails.
+   Resubmitting an existing registration also retries its initial email when
+   `ConfirmationEmailSent` is not `TRUE`, without creating another row.
 4. When Algorithmic QRs are ready to send, run `sendAllCheckInEmails`. It also
    recovers any legacy/failed Main QR rows. Rows with
    `CheckInEmailSent=TRUE` are skipped automatically.

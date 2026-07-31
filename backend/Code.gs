@@ -78,6 +78,7 @@ function doPost(e) {
     }
 
     var rowNumber;
+    var existingRegistration = null;
     var lock = LockService.getScriptLock();
     lock.waitLock(15000);
 
@@ -85,26 +86,36 @@ function doPost(e) {
       ensureHeaders(sheet, isAlgo ? ALGO_HEADERS : MAIN_HEADERS);
 
       // Uniqueness is per track/sheet. The same email may be in both tabs.
-      if (emailExists(sheet, email)) {
+      existingRegistration = findEmailRegistration(sheet, email);
+      if (existingRegistration) {
         console.warn(
           "Duplicate " + (isAlgo ? "Algo" : "Main") +
           " registration blocked for " + maskEmail(email)
         );
-
-        return jsonOut({
-          ok: false,
-          code: "ALREADY_REGISTERED",
-          error:
-            "This email is already registered for the " +
-            (isAlgo
-              ? "Algorithmic Hackathon."
-              : "Main Hackathon and cannot join another Main team."),
-        });
+      } else {
+        rowNumber = appendRecord(sheet, record);
       }
-
-      rowNumber = appendRecord(sheet, record);
     } finally {
       lock.releaseLock();
+    }
+
+    if (existingRegistration) {
+      var retried = retryMissingEmailForExistingRegistration(
+        sheet,
+        existingRegistration,
+        isAlgo
+      );
+
+      return jsonOut({
+        ok: false,
+        code: "ALREADY_REGISTERED",
+        confirmationEmailRetried: retried,
+        error:
+          "This email is already registered for the " +
+          (isAlgo
+            ? "Algorithmic Hackathon."
+            : "Main Hackathon and cannot join another Main team."),
+      });
     }
 
     // A failed email does not invalidate or duplicate the saved registration.
@@ -151,6 +162,58 @@ function doGet() {
     service: EVENT_NAME + " registration",
     workflow: "main-immediate-qr-algo-confirmation-v3",
   });
+}
+
+// A duplicate never creates another row. If its first email previously failed,
+// resubmitting safely retries that missing email using the original record.
+function retryMissingEmailForExistingRegistration(
+  sheet,
+  existingRegistration,
+  isAlgo
+) {
+  var existing = existingRegistration.record;
+  var rowNumber = existingRegistration.rowNumber;
+
+  if (isTrue(existing.ConfirmationEmailSent)) return false;
+  if (MailApp.getRemainingDailyQuota() < 1) {
+    console.warn("Email quota exhausted; duplicate email retry skipped.");
+    return false;
+  }
+
+  try {
+    if (isAlgo) {
+      sendAlgorithmicRegistrationConfirmation(
+        normalizeEmail(existing.Email),
+        existing.Name || "there"
+      );
+    } else {
+      var qrId = existing.QR_ID || Utilities.getUuid();
+      if (!existing.QR_ID) {
+        setCellByHeader(sheet, rowNumber, "QR_ID", qrId);
+      }
+
+      sendMainRegistrationWithQr(
+        normalizeEmail(existing.Email),
+        existing.Name || "there",
+        {
+          role: existing.Role || "",
+          teamName: existing.TeamName || "",
+          teamCode: existing.TeamCode || "",
+        },
+        qrId
+      );
+      setCellByHeader(sheet, rowNumber, "CheckInEmailSent", true);
+    }
+
+    setCellByHeader(sheet, rowNumber, "ConfirmationEmailSent", true);
+    return true;
+  } catch (error) {
+    console.error(
+      "Existing registration email retry failed for " +
+      maskEmail(existing.Email) + ": " + String(error)
+    );
+    return false;
+  }
 }
 
 // Main confirmation containing the QR inline and as a PNG attachment.
@@ -321,6 +384,19 @@ function testImmediateQrEmail() {
   );
 
   console.log("Test QR email sent to " + maskEmail(ownerEmail));
+}
+
+// Run from the editor to verify the confirmation-only Algo email template.
+function testAlgorithmicConfirmationEmail() {
+  var ownerEmail = Session.getEffectiveUser().getEmail();
+  if (!ownerEmail) {
+    throw new Error("Could not determine the script owner's email address.");
+  }
+
+  sendAlgorithmicRegistrationConfirmation(ownerEmail, "Test Participant");
+  console.log(
+    "Test Algorithmic confirmation sent to " + maskEmail(ownerEmail)
+  );
 }
 
 /**
@@ -700,19 +776,16 @@ function getHeaders(sheet) {
     });
 }
 
-function emailExists(sheet, email) {
-  var emailColumn = getHeaderColumn(sheet, "Email");
-  if (!emailColumn || sheet.getLastRow() < 2) return false;
+function findEmailRegistration(sheet, email) {
+  var rows = getRecords(sheet);
 
-  var values = sheet
-    .getRange(2, emailColumn, sheet.getLastRow() - 1, 1)
-    .getDisplayValues();
-
-  for (var i = 0; i < values.length; i++) {
-    if (normalizeEmail(values[i][0]) === email) return true;
+  for (var i = 0; i < rows.length; i++) {
+    if (normalizeEmail(rows[i].record.Email) === email) {
+      return rows[i];
+    }
   }
 
-  return false;
+  return null;
 }
 
 function setCellByHeader(sheet, rowNumber, header, value) {
