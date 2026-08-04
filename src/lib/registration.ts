@@ -17,6 +17,9 @@ export type RegistrationPayload = {
   name: string;
   email: string;
   university?: string;
+  nationality: "Singaporean" | "International student";
+  fieldOfStudy: string;
+  yearOfStudy: "Pre-university" | "Y1" | "Y2" | "Y3" | "Y4" | "Others";
   // Main only
   role?: "captain" | "member" | "solo";
   teamCode?: string;

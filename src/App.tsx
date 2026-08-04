@@ -274,6 +274,78 @@ function Input({
   );
 }
 
+function SelectInput({
+  label,
+  name,
+  placeholder,
+  options,
+  required,
+  register,
+}: {
+  label: string;
+  name: string;
+  placeholder: string;
+  options: string[];
+  required?: boolean;
+  register: UseFormRegister<Record<string, unknown>>;
+}) {
+  return (
+    <div>
+      <label className="mb-[7px] block ff-mono text-[10.5px] uppercase tracking-[0.1em] text-slate-400">
+        {label}
+      </label>
+      <select
+        {...register(name, { required })}
+        defaultValue=""
+        className="w-full rounded-lg border border-white/12 bg-[#0d1118] px-[14px] py-3 text-[15px] text-white outline-none transition focus:border-[#c9964a] focus:ring-2 focus:ring-[#c9964a]/25"
+      >
+        <option value="" disabled>
+          {placeholder}
+        </option>
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function ParticipantDetails({
+  register,
+}: {
+  register: UseFormRegister<Record<string, unknown>>;
+}) {
+  return (
+    <>
+      <SelectInput
+        label="Nationality"
+        name="nationality"
+        placeholder="Select nationality"
+        options={["Singaporean", "International student"]}
+        required
+        register={register}
+      />
+      <Input
+        label="Field of study"
+        placeholder="Computer Science"
+        name="fieldOfStudy"
+        required
+        register={register}
+      />
+      <SelectInput
+        label="Year of study"
+        name="yearOfStudy"
+        placeholder="Select year of study"
+        options={["Pre-university", "Y1", "Y2", "Y3", "Y4", "Others"]}
+        required
+        register={register}
+      />
+    </>
+  );
+}
+
 function FormFooter({
   sending,
   error,
@@ -1302,6 +1374,7 @@ function App() {
                       <Input label="Team name" placeholder="Null Pointers" name="teamName" register={createForm.register} />
                       <Input label="Email" placeholder="jane@u.nus.edu" name="email" type="email" required register={createForm.register} />
                       <Input label="University" placeholder="NUS" name="university" register={createForm.register} />
+                      <ParticipantDetails register={createForm.register} />
                     </div>
                     <div className="mt-[18px] flex items-center justify-between gap-4 rounded-[10px] border border-[#c9964a]/25 bg-[#9a6a2f]/10 px-[18px] py-4">
                       <div>
@@ -1337,6 +1410,7 @@ function App() {
                       <Input label="Team code" placeholder="LH26-XXXXXX" mono name="teamCode" required register={joinForm.register} />
                       <Input label="Email" placeholder="marcus@u.nus.edu" name="email" type="email" required register={joinForm.register} />
                       <Input label="University" placeholder="NUS" name="university" register={joinForm.register} />
+                      <ParticipantDetails register={joinForm.register} />
                     </div>
                     <FormFooter
                       sending={reg.status === "sending"}
@@ -1356,6 +1430,8 @@ function App() {
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <Input label="Your name" placeholder="Priya R." name="name" required register={soloForm.register} />
                       <Input label="Email" placeholder="priya@u.nus.edu" name="email" type="email" required register={soloForm.register} />
+                      <Input label="University" placeholder="NUS" name="university" register={soloForm.register} />
+                      <ParticipantDetails register={soloForm.register} />
                       <Input
                         label="Skills / what you bring"
                         placeholder="Frontend, ML, design…"
@@ -1404,6 +1480,7 @@ function App() {
                   <Input label="Email" placeholder="weijie@u.nus.edu" name="email" type="email" required register={algoForm.register} />
                   <Input label="University" placeholder="NUS" name="university" register={algoForm.register} />
                   <Input label="Codeforces handle (optional)" placeholder="@handle" name="codeforces" register={algoForm.register} />
+                  <ParticipantDetails register={algoForm.register} />
                 </div>
                 <div className="mt-4 flex items-center gap-3 rounded-[10px] border border-white/12 px-4 py-3.5">
                   <span className="inline-flex h-5 w-5 flex-none items-center justify-center rounded-[5px] border-[1.5px] border-[#c9964a] bg-[#c9964a] text-[12px] text-white">

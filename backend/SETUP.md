@@ -33,6 +33,7 @@ Algo form ──POST──▶ Google Apps Script ──▶ Algo sheet + confirma
 2. Google asks you to **authorise** — approve it (it's your own script).
 3. Back in the Sheet you'll now see two tabs with headers. In addition to the
    registration and QR fields, each tab includes:
+   - `Nationality`, `FieldOfStudy`, and `YearOfStudy` from the registration form.
    - `ConfirmationEmailSent` — whether the initial confirmation was sent.
    - `CheckInEmailSent` — whether final check-in details were sent.
 

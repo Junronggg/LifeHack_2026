@@ -21,12 +21,14 @@ var EVENT_LOCATION = "NUS School of Computing";
 
 var MAIN_HEADERS = [
   "Timestamp", "Name", "Email", "University", "Type",
+  "Nationality", "FieldOfStudy", "YearOfStudy",
   "Role", "TeamCode", "TeamName", "Skills",
   "QR_ID", "CheckedIn", "ConfirmationEmailSent", "CheckInEmailSent",
 ];
 
 var ALGO_HEADERS = [
   "Timestamp", "Name", "Email", "University", "Type",
+  "Nationality", "FieldOfStudy", "YearOfStudy",
   "Codeforces", "WarmupLevel",
   "QR_ID", "CheckedIn", "ConfirmationEmailSent", "CheckInEmailSent",
 ];
@@ -61,6 +63,9 @@ function doPost(e) {
       Email: email,
       University: data.university || "",
       Type: isNusEmail(email) ? "NUS" : "External",
+      Nationality: data.nationality || "",
+      FieldOfStudy: data.fieldOfStudy || "",
+      YearOfStudy: data.yearOfStudy || "",
       QR_ID: Utilities.getUuid(),
       CheckedIn: false,
       ConfirmationEmailSent: false,
