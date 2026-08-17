@@ -3,9 +3,12 @@ import { useForm, type UseFormRegister } from "react-hook-form";
 import "./App.css";
 import { links } from "./lib/links";
 import { submitRegistration } from "./lib/registration";
+import visaLogo from "../logos/Visa_Brandmark_Blue_RGB.png";
+import ecovoltLogo from "../logos/ECOVOLT - GREEN & BLACK (2).svg";
+import csitLogo from "../logos/9559_CSIT Logo_FA-01.png";
 
 const LOGO = "https://nuscomputing.com/comclub_logo.png";
-const EVENT_START = new Date("2026-08-22T09:00:00+08:00").getTime();
+const EVENT_START = new Date("2026-08-29T09:00:00+08:00").getTime();
 
 /* ------------------------------------------------------------------ */
 /* Shared styling tokens                                               */
@@ -48,51 +51,38 @@ function getCountdown() {
 /* Static content                                                      */
 /* ------------------------------------------------------------------ */
 const facts = [
-  ["Dates", "22–23 Aug 2026"],
+  ["Dates", "29–30 Aug 2026"],
   ["Duration", "24 hours"],
   ["Tracks", "Two"],
   ["Participants", "300–400"],
 ];
 
-/* TODO: Restore this data together with the sponsor section once partners are confirmed.
 const PARTNERS = [
   {
     name: "Visa",
-    initials: "VI",
+    logo: visaLogo,
+    logoClass: "h-12",
     domain: "Digital payments & agentic commerce",
-    role: "Industry brief · judging",
-    accent: "#1a1f71",
-  },
-  {
-    name: "ViSenze",
-    initials: "VS",
-    domain: "AI commerce search & product discovery",
-    role: "Industry brief · workshop · judging",
-    accent: "#7c3aed",
-  },
-  {
-    name: "CSIT",
-    initials: "CS",
-    domain: "Cybersecurity, AI & secure systems",
-    role: "Algorithmic Hackathon partner",
-    accent: "#0f766e",
+    role: "Industry partner",
+    website: "https://www.visa.com.sg/",
   },
   {
     name: "Ecovolt",
-    initials: "EV",
+    logo: ecovoltLogo,
+    logoClass: "h-12",
     domain: "AI, IoT & sustainable buildings",
-    role: "Industry challenge partner",
-    accent: "#15803d",
+    role: "Industry partner",
+    website: "https://www.ecovolt.ai/",
   },
   {
-    name: "NCS",
-    initials: "NC",
-    domain: "Data, AI, cyber, cloud & engineering",
-    role: "Supporting partner",
-    accent: "#b45309",
+    name: "CSIT",
+    logo: csitLogo,
+    logoClass: "h-14",
+    domain: "Cybersecurity, AI & secure systems",
+    role: "Industry partner",
+    website: "https://www.csit.gov.sg/",
   },
 ];
-*/
 
 type Question = {
   q: string;
@@ -561,7 +551,7 @@ function App() {
               ["About", "#about"],
               ["Tracks", "#tracks"],
               ["Algorithmic", "#algorithmic"],
-              // ["Sponsors", "#sponsors"], // Restore when sponsors are confirmed.
+              ["Sponsors", "#sponsors"],
               ["Club", "#organiser"],
               ["FAQ", "#faq"],
             ].map(([label, href]) => (
@@ -598,12 +588,12 @@ function App() {
             LifeHack 2026
           </h1>
           <p className="mx-auto mt-[26px] max-w-[36em] text-[20px] leading-[1.55] text-slate-300">
-            Five industry partners. Five real briefs. One 24-hour build challenge
+            Three industry partners. Three real briefs. One 24-hour build challenge
             and a competitive-programming sprint — two ways to put your skills to
             work on problems that matter.
           </p>
           <p className="ff-mono mt-4 mb-10 text-[13px] tracking-[0.06em] text-[#c9964a]">
-            22–23 August 2026 &nbsp;·&nbsp; COM3 MPH, NUS School of Computing
+            29–30 August 2026 &nbsp;·&nbsp; COM3 MPH, NUS School of Computing
           </p>
 
           <div className="mb-[42px]">
@@ -766,7 +756,7 @@ function App() {
                   ["Format", "~2h 45m sprint"],
                   ["Platform", "Codeforces"],
                   ["Ranked by", "Problems solved & time"],
-                  ["When", "23 Aug · 16:30"],
+                  ["When", "30 Aug · 16:30"],
                 ].map(([k, v]) => (
                   <div
                     key={k}
@@ -1098,7 +1088,7 @@ function App() {
         </div>
       </section>
 
-      {/* TODO: Restore this section once sponsors are confirmed.
+      {/* ---------------- SPONSORS ---------------- */}
       <section id="sponsors" className="mx-auto max-w-[1180px] px-7 py-20">
         <div className="mb-[38px] flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -1107,7 +1097,7 @@ function App() {
               className={`${sectionTitle} max-w-[16em]`}
               style={{ fontSize: "clamp(28px,3.6vw,40px)" }}
             >
-              Five partners. Five real-world challenge domains.
+              Three partners. Three real-world challenge domains.
             </h2>
           </div>
           <span className="ff-mono rounded-full border border-[#c9964a]/30 bg-[#9a6a2f]/10 px-3.5 py-2 text-[11px] tracking-[0.08em] text-[#c9964a]">
@@ -1117,29 +1107,27 @@ function App() {
 
         <p className="mb-8 max-w-[52em] text-[16px] leading-[1.65] text-slate-400">
           Our partners bring problem statements, technical context, judges and
-          support across commerce, cybersecurity, sustainability and enterprise
+          support across commerce, cybersecurity and sustainability
           technology. Full briefs are declassified when the Main Hackathon begins.
         </p>
 
-        <div className="grid gap-[18px] sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-[18px] md:grid-cols-3">
           {PARTNERS.map((partner, i) => (
             <article
               key={partner.name}
-              className={`group rounded-2xl border border-white/12 bg-white/[0.025] p-6 transition hover:-translate-y-0.5 hover:border-white/25 ${
-                i === PARTNERS.length - 1 ? "sm:col-span-2 lg:col-span-1" : ""
-              }`}
+              className="group rounded-2xl border border-white/12 bg-white/[0.025] p-6 transition hover:-translate-y-0.5 hover:border-white/25"
             >
-              <div className="mb-7 flex items-center justify-between gap-4">
-                <span
-                  className="ff-mono inline-flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 text-[13px] font-medium tracking-[0.08em] text-white"
-                  style={{ backgroundColor: `${partner.accent}55` }}
-                  aria-hidden="true"
-                >
-                  {partner.initials}
-                </span>
+              <div className="mb-7">
                 <span className="ff-mono text-[10px] uppercase tracking-[0.12em] text-slate-600">
                   Partner {String(i + 1).padStart(2, "0")}
                 </span>
+                <div className="mt-3 flex h-24 items-center justify-center rounded-xl border border-white/10 bg-[#b8bec6] px-6 py-3">
+                  <img
+                    src={partner.logo}
+                    alt={`${partner.name} logo`}
+                    className={`${partner.logoClass} max-h-full max-w-full object-contain mix-blend-multiply`}
+                  />
+                </div>
               </div>
               <h3 className="ff-serif text-[27px] font-semibold text-white">
                 {partner.name}
@@ -1147,14 +1135,24 @@ function App() {
               <p className="mt-2 min-h-[48px] text-[14.5px] leading-[1.55] text-slate-400">
                 {partner.domain}
               </p>
-              <div className="ff-mono mt-5 border-t border-white/10 pt-4 text-[10.5px] uppercase tracking-[0.1em] text-[#c9964a]">
-                {partner.role}
+              <div className="mt-5 flex items-center justify-between gap-4 border-t border-white/10 pt-4">
+                <span className="ff-mono text-[10.5px] uppercase tracking-[0.1em] text-[#c9964a]">
+                  {partner.role}
+                </span>
+                <a
+                  href={partner.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[13px] font-semibold text-slate-300 transition hover:text-white"
+                  aria-label={`Visit ${partner.name} website`}
+                >
+                  Visit website ↗
+                </a>
               </div>
             </article>
           ))}
         </div>
       </section>
-      */}
 
       {/* ---------------- JUDGES & PROBLEM STATEMENTS ---------------- */}
       <section className="border-t border-white/10 bg-white/[0.02]">
@@ -1206,7 +1204,7 @@ function App() {
               />
               <div>
                 <div className="text-[15px] font-semibold text-white">
-                  Statements drop on 22 Aug
+                  Statements drop on 29 Aug
                 </div>
                 <div className="mt-0.5 text-[13px] text-slate-500">
                   This panel updates the moment they're announced.
@@ -1569,7 +1567,7 @@ function App() {
               <p className="text-[14.5px] leading-[1.6] text-slate-400">
                 The flagship hackathon of the NUS Students' Computing Club — the
                 official faculty club of the NUS School of Computing since 1998.
-                22–23 August 2026, COM3 MPH.
+                29–30 August 2026, COM3 MPH.
               </p>
             </div>
             <div className="flex flex-wrap gap-14">

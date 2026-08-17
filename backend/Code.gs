@@ -16,7 +16,7 @@ var MAIN_TAB = "Main";
 var ALGO_TAB = "Algo";
 var NUS_DOMAIN = "@u.nus.edu";
 var EVENT_NAME = "LifeHack 2026";
-var EVENT_DATE = "22–23 August 2026";
+var EVENT_DATE = "29–30 August 2026";
 var EVENT_LOCATION = "NUS School of Computing";
 
 var MAIN_HEADERS = [
