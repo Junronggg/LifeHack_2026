@@ -82,6 +82,14 @@ const PARTNERS = [
     role: "Industry partner",
     website: "https://www.csit.gov.sg/",
   },
+  {
+    name: "ViSenze",
+    logo: "",
+    logoClass: "",
+    domain: "AI commerce search & product discovery",
+    role: "Industry partner",
+    website: "https://www.visenze.com/",
+  },
 ];
 
 type Question = {
@@ -588,7 +596,7 @@ function App() {
             LifeHack 2026
           </h1>
           <p className="mx-auto mt-[26px] max-w-[36em] text-[20px] leading-[1.55] text-slate-300">
-            Three industry partners. Three real briefs. One 24-hour build challenge
+            Four industry partners. Four real briefs. One 24-hour build challenge
             and a competitive-programming sprint — two ways to put your skills to
             work on problems that matter.
           </p>
@@ -1097,7 +1105,7 @@ function App() {
               className={`${sectionTitle} max-w-[16em]`}
               style={{ fontSize: "clamp(28px,3.6vw,40px)" }}
             >
-              Three partners. Three real-world challenge domains.
+              Four partners. Four real-world challenge domains.
             </h2>
           </div>
           <span className="ff-mono rounded-full border border-[#c9964a]/30 bg-[#9a6a2f]/10 px-3.5 py-2 text-[11px] tracking-[0.08em] text-[#c9964a]">
@@ -1111,7 +1119,7 @@ function App() {
           technology. Full briefs are declassified when the Main Hackathon begins.
         </p>
 
-        <div className="grid gap-[18px] md:grid-cols-3">
+        <div className="grid gap-[18px] md:grid-cols-2">
           {PARTNERS.map((partner, i) => (
             <article
               key={partner.name}
@@ -1122,11 +1130,20 @@ function App() {
                   Partner {String(i + 1).padStart(2, "0")}
                 </span>
                 <div className="mt-3 flex h-24 items-center justify-center rounded-xl border border-white/10 bg-[#b8bec6] px-6 py-3">
-                  <img
-                    src={partner.logo}
-                    alt={`${partner.name} logo`}
-                    className={`${partner.logoClass} max-h-full max-w-full object-contain mix-blend-multiply`}
-                  />
+                  {partner.logo ? (
+                    <img
+                      src={partner.logo}
+                      alt={`${partner.name} logo`}
+                      className={`${partner.logoClass} max-h-full max-w-full object-contain mix-blend-multiply`}
+                    />
+                  ) : (
+                    <span
+                      className="text-[30px] font-bold tracking-[-0.04em] text-[#5426ad]"
+                      aria-label={`${partner.name} logo`}
+                    >
+                      ViSenze
+                    </span>
+                  )}
                 </div>
               </div>
               <h3 className="ff-serif text-[27px] font-semibold text-white">
