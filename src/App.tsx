@@ -377,6 +377,18 @@ function FormFooter({
 function App() {
   const [cd, setCd] = useState(getCountdown());
 
+  useEffect(() => {
+    const sectionId = window.location.pathname.replace(/^\/+|\/+$/g, "");
+    if (!sectionId) {
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      document.getElementById(sectionId)?.scrollIntoView();
+    });
+  }, []);
+
   // Warm-up quiz
   const [scStarted, setScStarted] = useState(false);
   const [scIndex, setScIndex] = useState(0);
@@ -546,7 +558,7 @@ function App() {
       {/* ---------------- NAV ---------------- */}
       <nav className="sticky top-0 z-[60] border-b border-white/10 bg-[#05070a]/82 backdrop-blur-xl">
         <div className="mx-auto flex h-[66px] max-w-[1180px] items-center justify-between px-7">
-          <a href="#top" className="flex items-center gap-3">
+          <a href="/" className="flex items-center gap-3">
             <span className="inline-flex items-center justify-center rounded-md bg-white px-2 py-1">
               <img src={LOGO} alt="NUS Computing Club" className="block h-[26px] w-auto" />
             </span>
@@ -556,12 +568,13 @@ function App() {
           </a>
           <div className="hidden items-center gap-[30px] md:flex">
             {[
-              ["About", "#about"],
-              ["Tracks", "#tracks"],
-              ["Algorithmic", "#algorithmic"],
-              ["Sponsors", "#sponsors"],
-              ["Club", "#organiser"],
-              ["FAQ", "#faq"],
+              ["About", "/about"],
+              ["Tracks", "/tracks"],
+              ["Timeline", "/timeline"],
+              ["Algorithmic", "/algorithmic"],
+              ["Sponsors", "/sponsors"],
+              ["Club", "/organiser"],
+              ["FAQ", "/faq"],
             ].map(([label, href]) => (
               <a
                 key={href}
@@ -573,7 +586,7 @@ function App() {
             ))}
           </div>
           <a
-            href="#register"
+            href="/register"
             className="inline-flex items-center rounded-lg bg-[#9a6a2f] px-5 py-2.5 text-[14px] font-semibold text-white transition hover:bg-[#c9964a]"
           >
             Register
@@ -609,11 +622,14 @@ function App() {
           </div>
 
           <div className="flex flex-wrap justify-center gap-3.5">
-            <a href="#register" className={solidBtn}>
+            <a href="/register" className={solidBtn}>
               Register now
             </a>
-            <a href="#tracks" className={ghostBtn}>
+            <a href="/tracks" className={ghostBtn}>
               Explore the tracks
+            </a>
+            <a href="/timeline" className={ghostBtn}>
+              View full timeline
             </a>
           </div>
         </div>
@@ -637,6 +653,57 @@ function App() {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ---------------- TIMELINE ---------------- */}
+      <section id="timeline" className="border-b border-white/10 bg-[#0a0d14]">
+        <div className="mx-auto grid max-w-[1180px] items-center gap-10 px-7 py-[72px] md:grid-cols-[1fr_auto]">
+          <div>
+            <div className={`${eyebrow} mb-4`}>Event timeline</div>
+            <h2
+              className={`${sectionTitle} max-w-[15em]`}
+              style={{ fontSize: "clamp(30px,4vw,46px)" }}
+            >
+              Every briefing, deadline, and milestone in one place.
+            </h2>
+            <p className="mt-5 max-w-[42em] text-[17px] leading-[1.65] text-slate-300">
+              Scan the official QR code for the complete run of show for 29–30
+              August, including both competition tracks, venue details, live
+              countdowns, and schedule updates.
+            </p>
+            <p className="ff-mono mt-3 text-[11px] uppercase tracking-[0.1em] text-slate-500">
+              Schedule is indicative and subject to change · Singapore Time (GMT+8)
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3.5">
+              <a
+                href="/event-timeline/LifeHack-2026-Timeline.pdf"
+                className={ghostBtn}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Download timeline PDF
+              </a>
+              <a
+                href="/event-timeline/qr/qr-navy-on-white.png"
+                className={ghostBtn}
+                download
+              >
+                Download QR
+              </a>
+            </div>
+          </div>
+          <a
+            href="https://lifehack2026.nuscomputing.com/timeline"
+            aria-label="Open the LifeHack 2026 event timeline"
+            className="mx-auto rounded-2xl border border-white/10 bg-white p-4 transition hover:-translate-y-1 hover:border-[#c9964a]/60 md:mx-0"
+          >
+            <img
+              src="/event-timeline/qr/qr-navy-on-white.png"
+              alt="QR code linking to the LifeHack 2026 event timeline"
+              className="h-[190px] w-[190px] sm:h-[220px] sm:w-[220px]"
+            />
+          </a>
         </div>
       </section>
 
@@ -732,7 +799,7 @@ function App() {
                 ))}
               </div>
               <a
-                href="#register"
+                href="/register"
                 className="mt-[26px] inline-flex items-center gap-2 text-[15px] font-semibold"
                 style={{ color: GOLD }}
               >
@@ -778,7 +845,7 @@ function App() {
                 ))}
               </div>
               <a
-                href="#algorithmic"
+                href="/algorithmic"
                 className="mt-[26px] inline-flex items-center gap-2 text-[15px] font-semibold"
                 style={{ color: GOLD }}
               >
@@ -976,7 +1043,7 @@ function App() {
                     </p>
                   </div>
                   <a
-                    href="#register"
+                    href="/register"
                     className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-[#9a6a2f] py-[15px] text-[15px] font-semibold text-white transition hover:bg-[#c9964a]"
                   >
                     Continue to registration →
@@ -1504,7 +1571,7 @@ function App() {
                   <span className="text-[14px] text-slate-300">
                     I've completed the{" "}
                     <a
-                      href="#algorithmic"
+                      href="/algorithmic"
                       className="font-semibold"
                       style={{ color: GOLD }}
                     >
@@ -1594,10 +1661,11 @@ function App() {
                 </div>
                 <div className="flex flex-col gap-2.5">
                   {[
-                    ["About", "#about"],
-                    ["Tracks", "#tracks"],
-                    ["Algorithmic", "#algorithmic"],
-                    ["Register", "#register"],
+                    ["About", "/about"],
+                    ["Tracks", "/tracks"],
+                    ["Timeline", "/timeline"],
+                    ["Algorithmic", "/algorithmic"],
+                    ["Register", "/register"],
                   ].map(([l, h]) => (
                     <a
                       key={h}
@@ -1622,10 +1690,10 @@ function App() {
                   >
                     NUS Students' Computing Club →
                   </a>
-                  <a href="#organiser" className="text-[14.5px] text-slate-300 hover:text-white">
+                  <a href="/organiser" className="text-[14.5px] text-slate-300 hover:text-white">
                     About the club
                   </a>
-                  <a href="#faq" className="text-[14.5px] text-slate-300 hover:text-white">
+                  <a href="/faq" className="text-[14.5px] text-slate-300 hover:text-white">
                     FAQ
                   </a>
                   <a href={links.email} className="text-[14.5px] text-slate-300 hover:text-white">
