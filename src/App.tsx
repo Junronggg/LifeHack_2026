@@ -6,6 +6,7 @@ import { submitRegistration } from "./lib/registration";
 import visaLogo from "../logos/Visa_Brandmark_Blue_RGB.png";
 import ecovoltLogo from "../logos/ECOVOLT - GREEN & BLACK (2).svg";
 import csitLogo from "../logos/9559_CSIT Logo_FA-01.png";
+import rezolveLogo from "../logos/Rezolve.svg";
 
 const LOGO = "https://nuscomputing.com/comclub_logo.png";
 const EVENT_START = new Date("2026-08-29T09:00:00+08:00").getTime();
@@ -83,12 +84,12 @@ const PARTNERS = [
     website: "https://www.csit.gov.sg/",
   },
   {
-    name: "ViSenze",
-    logo: "",
-    logoClass: "",
-    domain: "AI commerce search & product discovery",
+    name: "Rezolve",
+    logo: rezolveLogo,
+    logoClass: "h-12",
+    domain: "AI-powered commerce, search & checkout",
     role: "Industry partner",
-    website: "https://www.visenze.com/",
+    website: "https://rezolve.com/",
   },
 ];
 
@@ -1208,7 +1209,7 @@ function App() {
                       className="text-[30px] font-bold tracking-[-0.04em] text-[#5426ad]"
                       aria-label={`${partner.name} logo`}
                     >
-                      ViSenze
+                      {partner.name}
                     </span>
                   )}
                 </div>
