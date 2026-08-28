@@ -30,7 +30,7 @@ export default function Navbar() {
           href="/register"
           className="rounded-full bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-300"
         >
-          Sign Up
+          Registration Closed
         </a>
       </nav>
     </header>
