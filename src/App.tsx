@@ -110,12 +110,12 @@ const PARTNERS = [
     website: "https://www.csit.gov.sg/",
   },
   {
-    name: "Rezolve",
+    name: "Rezolve AI",
     logo: rezolveLogo,
     logoClass: "h-12",
     domain: "AI-powered commerce, search & checkout",
     role: "Industry partner",
-    website: "https://rezolve.com/",
+    website: "https://www.rezolve.com/",
   },
 ];
 

@@ -71,6 +71,6 @@ It is a single static file. Any of these work:
 - Light-background QR (`qr-navy-on-white`) scans most reliably. Use the inverted
   versions only on the dark posters.
 - The partner line and the NUSSU sponsor disclaimer name all three companies
-  (Rezolve, Visa, Ecovolt Technologies). They are in the footer and repeat on every
+  (Rezolve AI, Visa, Ecovolt Technologies). They are in the footer and repeat on every
   page of the PDF. Do not remove them.
 - The PDF is two pages, one per day.
