@@ -57,6 +57,32 @@ const facts = [
   ["Participants", "300–400"],
 ];
 
+const PRIZE_TRACKS = [
+  {
+    label: "Main Hackathon",
+    total: "S$7,800",
+    description:
+      "Awards for the strongest working prototypes across all industry problem statements.",
+    awards: [
+      ["1st place", "S$3,000"],
+      ["2nd place", "S$2,000"],
+      ["3rd place", "S$1,000"],
+      ["3 special awards", "S$600 each"],
+    ],
+  },
+  {
+    label: "Algorithmic Hackathon",
+    total: "S$3,250",
+    description:
+      "Individual prizes for the fastest, most accurate competitive programmers.",
+    awards: [
+      ["1st place", "S$1,500"],
+      ["2nd place", "S$1,000"],
+      ["3rd place", "S$750"],
+    ],
+  },
+];
+
 const PARTNERS = [
   {
     name: "Visa",
@@ -852,6 +878,58 @@ function App() {
                 New to this? Learn more →
               </a>
             </article>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------- PRIZES ---------------- */}
+      <section id="prizes" className="border-y border-white/10 bg-[#0a0d14]">
+        <div className="mx-auto max-w-[1180px] px-7 py-[84px]">
+          <div className="grid gap-10 lg:grid-cols-[0.72fr_1.28fr] lg:items-end">
+            <div>
+              <div className={`${eyebrow} mb-4`}>Prizes</div>
+              <h2
+                className={sectionTitle}
+                style={{ fontSize: "clamp(30px,4vw,46px)" }}
+              >
+                S$11,050 in cash prizes.
+              </h2>
+              <p className="mt-5 max-w-[31em] text-[17px] leading-[1.65] text-slate-300">
+                Bring your best build or your fastest solve. Both tracks have a
+                podium waiting for you.
+              </p>
+            </div>
+            <div className="grid gap-5 md:grid-cols-2">
+              {PRIZE_TRACKS.map((track) => (
+                <article
+                  key={track.label}
+                  className="rounded-2xl border border-[#c9964a]/35 bg-[#9a6a2f]/[0.06] p-7"
+                >
+                  <div className="ff-mono text-[10.5px] uppercase tracking-[0.14em] text-[#c9964a]">
+                    {track.label}
+                  </div>
+                  <p className="ff-serif mt-3 text-[36px] font-semibold leading-none text-white">
+                    {track.total}
+                  </p>
+                  <p className="mt-4 min-h-[52px] text-[14.5px] leading-[1.55] text-slate-300">
+                    {track.description}
+                  </p>
+                  <dl className="mt-6 border-t border-white/10">
+                    {track.awards.map(([place, amount]) => (
+                      <div
+                        key={place}
+                        className="flex items-center justify-between gap-4 border-b border-white/10 py-3"
+                      >
+                        <dt className="text-[14px] text-slate-400">{place}</dt>
+                        <dd className="ff-mono text-[13px] text-[#e4be75]">
+                          {amount}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </article>
+              ))}
+            </div>
           </div>
         </div>
       </section>
