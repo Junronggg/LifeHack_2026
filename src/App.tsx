@@ -10,6 +10,7 @@ import rezolveLogo from "../logos/Rezolve.svg";
 
 const LOGO = "https://nuscomputing.com/comclub_logo.png";
 const EVENT_START = new Date("2026-08-29T09:00:00+08:00").getTime();
+const REGISTRATION_OPEN = false;
 
 /* ------------------------------------------------------------------ */
 /* Shared styling tokens                                               */
@@ -110,12 +111,12 @@ const PARTNERS = [
     website: "https://www.csit.gov.sg/",
   },
   {
-    name: "Rezolve",
+    name: "Rezolve AI",
     logo: rezolveLogo,
     logoClass: "h-12",
     domain: "AI-powered commerce, search & checkout",
     role: "Industry partner",
-    website: "https://rezolve.com/",
+    website: "https://www.rezolve.com/",
   },
 ];
 
@@ -424,33 +425,21 @@ function App() {
   >([]);
   const [scDone, setScDone] = useState(false);
 
-  // Registration
+  // This state is retained only while the closed registration UI is deployed.
+  // The forms themselves are not mounted unless registration reopens.
   const [regTab, setRegTab] = useState<"main" | "algo">("main");
   const [mainMode, setMainMode] = useState<"" | "create" | "join" | "solo">("");
   const [teamCode, setTeamCode] = useState("");
-
-  // FAQ
-  const [faqOpen, setFaqOpen] = useState(0);
-
-  // Registration submission
-  const [reg, setReg] = useState<{
-    status: "idle" | "sending" | "done" | "error";
-  }>({ status: "idle" });
+  const [reg, setReg] = useState<{ status: "idle" | "sending" | "done" | "error" }>({ status: "idle" });
   const algoForm = useForm<Record<string, unknown>>();
   const createForm = useForm<Record<string, unknown>>();
   const joinForm = useForm<Record<string, unknown>>();
   const soloForm = useForm<Record<string, unknown>>();
 
-  const submit = async (
-    track: "Main" | "Algo",
-    data: Record<string, unknown>
-  ) => {
+  const submit = async (track: "Main" | "Algo", data: Record<string, unknown>) => {
     setReg({ status: "sending" });
     try {
-      await submitRegistration({
-        track,
-        ...data,
-      } as Parameters<typeof submitRegistration>[0]);
+      await submitRegistration({ track, ...data } as Parameters<typeof submitRegistration>[0]);
       setReg({ status: "done" });
     } catch {
       setReg({ status: "error" });
@@ -465,6 +454,9 @@ function App() {
     setMainMode("");
     setTeamCode("");
   };
+
+  // FAQ
+  const [faqOpen, setFaqOpen] = useState(0);
 
   useEffect(() => {
     const t = window.setInterval(() => setCd(getCountdown()), 1000);
@@ -563,7 +555,6 @@ function App() {
     return { attempted, correct, level, desc, willing };
   }, [scAnswers]);
 
-  /* ---- registration helpers ---- */
   const setMode = (m: "create" | "join" | "solo") => {
     setReg({ status: "idle" });
     setMainMode(m);
@@ -616,7 +607,7 @@ function App() {
             href="/register"
             className="inline-flex items-center rounded-lg bg-[#9a6a2f] px-5 py-2.5 text-[14px] font-semibold text-white transition hover:bg-[#c9964a]"
           >
-            Register
+            Registration closed
           </a>
         </div>
       </nav>
@@ -650,7 +641,7 @@ function App() {
 
           <div className="flex flex-wrap justify-center gap-3.5">
             <a href="/register" className={solidBtn}>
-              Register now
+              Registration closed
             </a>
             <a href="/tracks" className={ghostBtn}>
               Explore the tracks
@@ -706,8 +697,7 @@ function App() {
               <a
                 href="/event-timeline/LifeHack-2026-Timeline.pdf"
                 className={ghostBtn}
-                target="_blank"
-                rel="noopener noreferrer"
+                download="LifeHack-2026-Timeline.pdf"
               >
                 Download timeline PDF
               </a>
@@ -812,7 +802,7 @@ function App() {
                 className="mt-[26px] inline-flex items-center gap-2 text-[15px] font-semibold"
                 style={{ color: GOLD }}
               >
-                Register a team →
+                Registration closed →
               </a>
             </article>
 
@@ -1107,7 +1097,7 @@ function App() {
                     href="/register"
                     className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-[#9a6a2f] py-[15px] text-[15px] font-semibold text-white transition hover:bg-[#c9964a]"
                   >
-                    Continue to registration →
+                    Registration closed →
                   </a>
                   <button
                     onClick={restartSC}
@@ -1363,9 +1353,10 @@ function App() {
       {/* ---------------- REGISTRATION ---------------- */}
       <section id="register" className="grid-bg relative overflow-hidden">
         {/* marquee backdrop */}
+        {REGISTRATION_OPEN && (
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 flex flex-col justify-around gap-5 opacity-20"
+          className="pointer-events-none absolute inset-0 hidden flex-col justify-around gap-5 opacity-20"
           style={{
             WebkitMaskImage:
               "linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)",
@@ -1401,6 +1392,7 @@ function App() {
             </div>
           ))}
         </div>
+        )}
 
         <div className="relative z-[1] mx-auto max-w-[920px] px-7 py-20">
           <div className="mb-9 text-center">
@@ -1409,14 +1401,15 @@ function App() {
               className={`${sectionTitle} mb-3.5`}
               style={{ fontSize: "clamp(30px,4vw,46px)" }}
             >
-              Secure your spot
+              Registration is now closed
             </h2>
             <p className="mx-auto max-w-[34em] text-[16.5px] leading-[1.55] text-slate-300">
-              Two separate forms — one per track. Register right here; there's no
-              redirect to a third-party site.
+              Thank you for your interest in LifeHack 2026. We are no longer
+              accepting registrations for either track.
             </p>
           </div>
 
+          {REGISTRATION_OPEN ? (
           <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0d1118] shadow-[0_30px_70px_-40px_rgba(0,0,0,0.8)]">
             {reg.status === "done" ? (
               <div className="px-9 py-[44px] text-center">
@@ -1651,9 +1644,19 @@ function App() {
               </>
             )}
           </div>
+          ) : (
+            <div className="rounded-2xl border border-[#c9964a]/30 bg-[#0d1118] px-8 py-12 text-center shadow-[0_30px_70px_-40px_rgba(0,0,0,0.8)]">
+              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-[#9a6a2f]/20 text-[26px]" style={{ color: GOLD }}>
+                ×
+              </div>
+              <h3 className="ff-serif text-[28px] font-semibold text-white">Registration is closed</h3>
+              <p className="mx-auto mt-3 max-w-[34em] text-[16px] leading-[1.6] text-slate-300">
+                Registration for the Main Hackathon and Algorithmic Hackathon has closed. We look forward to welcoming registered participants on event day.
+              </p>
+            </div>
+          )}
           <p className="ff-mono mt-[18px] text-center text-[12.5px] text-slate-500">
-            Your registration links to a QR code for fast, contactless check-in
-            on event day.
+            For event updates, please follow NUS Computing Club's official channels.
           </p>
         </div>
       </section>
@@ -1726,7 +1729,7 @@ function App() {
                     ["Tracks", "/tracks"],
                     ["Timeline", "/timeline"],
                     ["Algorithmic", "/algorithmic"],
-                    ["Register", "/register"],
+                    ["Registration closed", "/register"],
                   ].map(([l, h]) => (
                     <a
                       key={h}
