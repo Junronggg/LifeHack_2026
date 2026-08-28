@@ -1,5 +1,3 @@
-import { links } from "../lib/links";
-
 const tracks = [
   {
     title: "Main Hackathon",
@@ -10,7 +8,6 @@ const tracks = [
       "Beginner-friendly",
       "Startup and sponsor challenges",
     ],
-    signupLink: links.mainHackathonSignup,
   },
   {
     title: "Algorithmic Hackathon",
@@ -21,7 +18,6 @@ const tracks = [
       "Problem-solving intensive",
       "Great for CS and coding enthusiasts",
     ],
-    signupLink: links.algorithmicHackathonSignup,
   },
 ];
 
@@ -58,14 +54,9 @@ export default function Tracks() {
               ))}
             </ul>
 
-            <a
-              href={track.signupLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-8 inline-block rounded-full bg-cyan-400 px-5 py-3 font-semibold text-slate-950 transition hover:bg-cyan-300"
-            >
-              Sign up for {track.title}
-            </a>
+            <p className="mt-8 inline-block rounded-full border border-cyan-300/40 px-5 py-3 font-semibold text-cyan-200">
+              Registration Closed
+            </p>
           </div>
         ))}
       </div>
