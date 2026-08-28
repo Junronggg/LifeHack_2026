@@ -23,14 +23,16 @@ var MAIN_HEADERS = [
   "Timestamp", "Name", "Email", "University", "Type",
   "Nationality", "FieldOfStudy", "YearOfStudy",
   "Role", "TeamCode", "TeamName", "Skills",
-  "QR_ID", "CheckedIn", "ConfirmationEmailSent", "CheckInEmailSent",
+  "QR_ID", "CheckedIn", "CheckedInAt", "CheckedInBy",
+  "ConfirmationEmailSent", "CheckInEmailSent",
 ];
 
 var ALGO_HEADERS = [
   "Timestamp", "Name", "Email", "University", "Type",
   "Nationality", "FieldOfStudy", "YearOfStudy",
   "Codeforces", "WarmupLevel",
-  "QR_ID", "CheckedIn", "ConfirmationEmailSent", "CheckInEmailSent",
+  "QR_ID", "CheckedIn", "CheckedInAt", "CheckedInBy",
+  "ConfirmationEmailSent", "CheckInEmailSent",
 ];
 
 // Website registration endpoint.
@@ -161,12 +163,213 @@ function doPost(e) {
   }
 }
 
-function doGet() {
+function doGet(e) {
+  if (e && e.parameter && e.parameter.action) {
+    return handleCheckInJsonp(e);
+  }
+
+  if (e && e.parameter && e.parameter.page === "checkin") {
+    return HtmlService.createHtmlOutputFromFile("CheckIn")
+      .setTitle(EVENT_NAME + " Staff Check-in")
+      .addMetaTag("viewport", "width=device-width, initial-scale=1");
+  }
+
   return jsonOut({
     ok: true,
     service: EVENT_NAME + " registration",
     workflow: "main-immediate-qr-algo-confirmation-v3",
   });
+}
+
+/**
+ * JSONP bridge used by the top-level website scanner. Apps Script ContentService
+ * does not provide browser CORS headers, so a normal cross-origin fetch cannot
+ * read the result. The PIN still protects every lookup and write.
+ */
+function handleCheckInJsonp(e) {
+  var callback = String(e.parameter.callback || "");
+  if (!/^lifehackCheckIn_[A-Za-z0-9_]{1,80}$/.test(callback)) {
+    return jsonOut({ ok: false, error: "Invalid callback." });
+  }
+
+  var response;
+  try {
+    if (e.parameter.action === "verify") {
+      response = verifyCheckInAccess(e.parameter.pin, e.parameter.staffName);
+    } else if (e.parameter.action === "checkin") {
+      response = checkInParticipant(
+        e.parameter.qrId,
+        e.parameter.pin,
+        e.parameter.staffName
+      );
+    } else {
+      throw new Error("Unknown check-in action.");
+    }
+  } catch (error) {
+    response = {
+      ok: false,
+      error: error && error.message ? error.message : String(error),
+    };
+  }
+
+  var json = JSON.stringify(response)
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
+
+  return ContentService
+    .createTextOutput(callback + "(" + json + ");")
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
+/**
+ * Confirms the staff PIN before the phone camera is opened.
+ * The PIN is stored in Project Settings > Script properties as CHECKIN_PIN.
+ */
+function verifyCheckInAccess(pin, staffName) {
+  requireValidCheckInPin(pin);
+
+  var cleanStaffName = normalizeStaffName(staffName);
+  if (!cleanStaffName) {
+    throw new Error("Enter your name or check-in desk.");
+  }
+
+  return { ok: true, staffName: cleanStaffName };
+}
+
+/**
+ * Looks up one participant by the UUID contained in their emailed QR code and
+ * atomically marks the matching Main or Algo row as checked in.
+ */
+function checkInParticipant(qrValue, pin, staffName) {
+  requireValidCheckInPin(pin);
+
+  var qrId = normalizeQrId(qrValue);
+  var cleanStaffName = normalizeStaffName(staffName);
+
+  if (!cleanStaffName) {
+    throw new Error("Enter your name or check-in desk.");
+  }
+  if (!isValidQrId(qrId)) {
+    return { status: "INVALID_QR" };
+  }
+
+  var lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+
+  try {
+    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    var targets = [
+      { name: MAIN_TAB, label: "Main Hackathon", headers: MAIN_HEADERS },
+      { name: ALGO_TAB, label: "Algorithmic Hackathon", headers: ALGO_HEADERS },
+    ];
+
+    for (var i = 0; i < targets.length; i++) {
+      var target = targets[i];
+      var sheet = spreadsheet.getSheetByName(target.name);
+      if (!sheet) continue;
+
+      ensureHeaders(sheet, target.headers);
+      var match = findQrRegistration(sheet, qrId);
+      if (!match) continue;
+
+      var record = match.record;
+      if (isTrue(record.CheckedIn)) {
+        return buildCheckInResult(
+          "ALREADY_CHECKED_IN",
+          target.label,
+          record,
+          record.CheckedInAt,
+          record.CheckedInBy
+        );
+      }
+
+      var checkedInAt = new Date();
+      setCellByHeader(sheet, match.rowNumber, "CheckedIn", true);
+      setCellByHeader(sheet, match.rowNumber, "CheckedInAt", checkedInAt);
+      setCellByHeader(sheet, match.rowNumber, "CheckedInBy", cleanStaffName);
+      SpreadsheetApp.flush();
+
+      console.log(
+        "Checked in " + maskEmail(record.Email) + " for " + target.label +
+        " at " + cleanStaffName
+      );
+
+      return buildCheckInResult(
+        "CHECKED_IN",
+        target.label,
+        record,
+        checkedInAt,
+        cleanStaffName
+      );
+    }
+
+    return { status: "INVALID_QR" };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function requireValidCheckInPin(pin) {
+  var expected = PropertiesService.getScriptProperties()
+    .getProperty("CHECKIN_PIN");
+
+  if (!expected) {
+    throw new Error(
+      "Check-in is not configured. Ask the lead to set CHECKIN_PIN in Script properties."
+    );
+  }
+  if (String(pin || "") !== expected) {
+    throw new Error("Incorrect staff PIN.");
+  }
+}
+
+function normalizeStaffName(value) {
+  var name = String(value || "").trim().replace(/\s+/g, " ").slice(0, 60);
+  // Prevent a staff-entered label from being interpreted as a Sheet formula.
+  return /^[=+@]/.test(name) ? "'" + name : name;
+}
+
+function normalizeQrId(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function isValidQrId(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(value);
+}
+
+function findQrRegistration(sheet, qrId) {
+  var rows = getRecords(sheet);
+
+  for (var i = 0; i < rows.length; i++) {
+    if (normalizeQrId(rows[i].record.QR_ID) === qrId) {
+      return rows[i];
+    }
+  }
+
+  return null;
+}
+
+function buildCheckInResult(status, track, record, checkedInAt, checkedInBy) {
+  return {
+    status: status,
+    name: String(record.Name || ""),
+    track: track,
+    university: String(record.University || ""),
+    teamName: String(record.TeamName || ""),
+    role: formatRole(record.Role),
+    checkedInAt: formatCheckInTime(checkedInAt),
+    checkedInBy: String(checkedInBy || ""),
+  };
+}
+
+function formatCheckInTime(value) {
+  if (!value) return "";
+
+  var date = value instanceof Date ? value : new Date(value);
+  if (isNaN(date.getTime())) return String(value);
+
+  var timezone = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+  return Utilities.formatDate(date, timezone, "d MMM yyyy, h:mm:ss a");
 }
 
 // A duplicate never creates another row. If its first email previously failed,

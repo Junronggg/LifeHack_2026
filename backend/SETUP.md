@@ -120,11 +120,14 @@ creating or joining more than one team.
   block a real student. See the commented block at the bottom of `Code.gs` for
   how to turn on hard enforcement when team size is finalised.
 
-## What's next (not built yet)
+## Staff check-in scanner
 
-- **Check-in scanner page** — a committee-only page that scans a participant's
-  QR and flips their `CheckedIn` column to `TRUE`. (Fallback today: `Ctrl+F`
-  their name in the Sheet and tick the box.)
+The live camera scanner is hosted by the main website because Apps Script HTML
+iframes block mobile camera access. Follow the complete backend, website
+deployment, testing, and event-day instructions in
+[`CHECKIN_SETUP.md`](./CHECKIN_SETUP.md).
+
+## What's next
 - **Dynamic sponsors & day-of problem statements** — same pattern in reverse:
   the site *reads* extra tabs, so you edit a row during the event and the page
   updates with no redeploy.

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+      :root {
+        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #10233f;
+        background: #f4f7fb;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100vh; background: #f4f7fb; }
+      main { width: min(100%, 560px); margin: 0 auto; padding: 20px; }
+      h1 { margin: 0 0 6px; font-size: 1.7rem; }
+      .subtitle { margin: 0 0 20px; color: #56657a; }
+      .card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 8px 30px rgba(16, 35, 63, .1);
+        padding: 20px;
+        margin-bottom: 16px;
+      }
+      label { display: block; margin: 14px 0 6px; font-weight: 700; }
+      input {
+        width: 100%; padding: 13px; border: 1px solid #b7c1cf;
+        border-radius: 10px; font-size: 16px;
+      }
+      button {
+        width: 100%; margin-top: 16px; padding: 14px; border: 0;
+        border-radius: 10px; background: #123b70; color: white;
+        font-size: 16px; font-weight: 800; cursor: pointer;
+      }
+      button:disabled { opacity: .55; cursor: wait; }
+      button.secondary { background: #e7edf5; color: #123b70; }
+      #reader { overflow: hidden; border-radius: 12px; }
+      #scannerCard, #resultCard { display: none; }
+      .result { text-align: center; border: 3px solid transparent; }
+      .result.success { background: #e9f8ef; border-color: #18864b; }
+      .result.warning { background: #fff6dd; border-color: #d28b00; }
+      .result.error { background: #ffeded; border-color: #c73535; }
+      .result.processing { background: #edf4ff; border-color: #4778be; }
+      #resultTitle { margin: 0 0 12px; font-size: 1.55rem; }
+      #participantName { margin: 0 0 8px; font-size: 1.45rem; }
+      #details { line-height: 1.55; color: #34465e; }
+      .hint { color: #67768a; font-size: .92rem; }
+      .manual-row { border-top: 1px solid #dce2ea; margin-top: 20px; padding-top: 6px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>LifeHack 2026 Check-in</h1>
+      <p class="subtitle">Staff scanner — do not share this page or PIN.</p>
+
+      <section id="loginCard" class="card">
+        <label for="staffName">Your name / desk</label>
+        <input id="staffName" autocomplete="name" placeholder="Example: Alice – Desk 1">
+
+        <label for="staffPin">Staff PIN</label>
+        <input id="staffPin" type="password" inputmode="numeric" autocomplete="one-time-code" placeholder="Enter staff PIN">
+
+        <button id="loginButton" type="button" onclick="unlockScanner()">Open scanner</button>
+        <p id="loginError" class="hint" role="alert"></p>
+      </section>
+
+      <section id="scannerCard" class="card">
+        <div id="reader"></div>
+        <p class="hint">Place one participant QR inside the camera frame.</p>
+
+        <div class="manual-row">
+          <label for="manualQr">Camera not working? Paste the QR ID</label>
+          <input id="manualQr" autocomplete="off" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+          <button class="secondary" type="button" onclick="submitManualQr()">Check in manually</button>
+        </div>
+      </section>
+
+      <section id="resultCard" class="card result" aria-live="assertive">
+        <h2 id="resultTitle"></h2>
+        <h3 id="participantName"></h3>
+        <div id="details"></div>
+        <button id="nextButton" type="button" onclick="scanNext()">Scan next participant</button>
+      </section>
+    </main>
+
+    <script>
+      let scanner = null;
+      let scanLocked = false;
+      let activePin = "";
+      let activeStaffName = "";
+
+      function unlockScanner() {
+        const button = document.getElementById("loginButton");
+        const error = document.getElementById("loginError");
+        const staffName = document.getElementById("staffName").value.trim();
+        const pin = document.getElementById("staffPin").value.trim();
+
+        error.textContent = "";
+        if (!staffName || !pin) {
+          error.textContent = "Enter both your name/desk and the staff PIN.";
+          return;
+        }
+
+        button.disabled = true;
+        button.textContent = "Checking access…";
+
+        google.script.run
+          .withSuccessHandler(function () {
+            activePin = pin;
+            activeStaffName = staffName;
+            sessionStorage.setItem("lifehackCheckInStaff", staffName);
+            document.getElementById("loginCard").style.display = "none";
+            document.getElementById("scannerCard").style.display = "block";
+            startScanner();
+          })
+          .withFailureHandler(function (failure) {
+            button.disabled = false;
+            button.textContent = "Open scanner";
+            error.textContent = getFailureMessage(failure);
+          })
+          .verifyCheckInAccess(pin, staffName);
+      }
+
+      async function startScanner() {
+        try {
+          scanner = scanner || new Html5Qrcode("reader");
+          await scanner.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 240, height: 240 } },
+            handleScan,
+            function () {}
+          );
+        } catch (error) {
+          showError("CAMERA UNAVAILABLE", String(error));
+        }
+      }
+
+      function handleScan(decodedText) {
+        if (scanLocked) return;
+        checkIn(decodedText);
+      }
+
+      function submitManualQr() {
+        const value = document.getElementById("manualQr").value.trim();
+        if (!value || scanLocked) return;
+        checkIn(value);
+      }
+
+      async function checkIn(qrValue) {
+        scanLocked = true;
+        if (scanner && scanner.getState() === Html5QrcodeScannerState.SCANNING) {
+          scanner.pause(true);
+        }
+
+        document.getElementById("scannerCard").style.display = "none";
+        showResult("processing", "CHECKING…", "", ["Looking up participant"]);
+        document.getElementById("nextButton").style.display = "none";
+
+        google.script.run
+          .withSuccessHandler(renderCheckInResult)
+          .withFailureHandler(function (failure) {
+            showError("CHECK-IN FAILED", getFailureMessage(failure));
+          })
+          .checkInParticipant(qrValue, activePin, activeStaffName);
+      }
+
+      function renderCheckInResult(result) {
+        if (!result || result.status === "INVALID_QR") {
+          showError("QR NOT RECOGNISED", "Use the participant lookup or manual QR ID.");
+          return;
+        }
+
+        const details = [result.track];
+        if (result.university) details.push(result.university);
+        if (result.teamName) details.push("Team: " + result.teamName);
+        if (result.role) details.push("Role: " + result.role);
+        if (result.checkedInAt) details.push("Time: " + result.checkedInAt);
+        if (result.checkedInBy) details.push("By: " + result.checkedInBy);
+
+        if (result.status === "ALREADY_CHECKED_IN") {
+          showResult("warning", "ALREADY CHECKED IN", result.name, details);
+        } else {
+          if (navigator.vibrate) navigator.vibrate(180);
+          showResult("success", "CHECKED IN", result.name, details);
+        }
+      }
+
+      function showError(title, message) {
+        document.getElementById("scannerCard").style.display = "none";
+        showResult("error", title, "", [message]);
+      }
+
+      function showResult(kind, title, name, detailLines) {
+        const card = document.getElementById("resultCard");
+        card.className = "card result " + kind;
+        card.style.display = "block";
+        document.getElementById("resultTitle").textContent = title;
+        document.getElementById("participantName").textContent = name || "";
+
+        const details = document.getElementById("details");
+        details.replaceChildren();
+        detailLines.forEach(function (line) {
+          const row = document.createElement("div");
+          row.textContent = line;
+          details.appendChild(row);
+        });
+
+        document.getElementById("nextButton").style.display =
+          kind === "processing" ? "none" : "block";
+      }
+
+      function scanNext() {
+        document.getElementById("resultCard").style.display = "none";
+        document.getElementById("scannerCard").style.display = "block";
+        document.getElementById("manualQr").value = "";
+        scanLocked = false;
+
+        if (scanner && scanner.getState() === Html5QrcodeScannerState.PAUSED) {
+          scanner.resume();
+        } else {
+          startScanner();
+        }
+      }
+
+      function getFailureMessage(failure) {
+        return failure && failure.message ? failure.message : String(failure || "Unknown error");
+      }
+
+      document.getElementById("staffName").value =
+        sessionStorage.getItem("lifehackCheckInStaff") || "";
+    </script>
+  </body>
+</html>

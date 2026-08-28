@@ -1,0 +1,53 @@
+.checkin-page {
+  width: min(100%, 560px);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 24px 18px;
+  color: #10233f;
+}
+
+.checkin-page h1 { margin: 0 0 6px; font-size: clamp(2rem, 8vw, 3rem); }
+.checkin-subtitle { margin: 0 0 22px; color: #56657a; font-size: 1.1rem; }
+
+.checkin-card {
+  padding: 20px;
+  margin-bottom: 16px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 30px rgba(16, 35, 63, .12);
+}
+
+.checkin-card label { display: block; margin: 14px 0 6px; font-weight: 750; }
+.checkin-card input {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #b7c1cf;
+  border-radius: 10px;
+  font: inherit;
+}
+
+.checkin-card button {
+  width: 100%;
+  margin-top: 16px;
+  padding: 14px;
+  border: 0;
+  border-radius: 10px;
+  background: #123b70;
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+}
+
+.checkin-card button:disabled { opacity: .55; }
+.checkin-card button.secondary { background: #e7edf5; color: #123b70; }
+#checkin-reader { overflow: hidden; border-radius: 12px; }
+.checkin-manual { padding-top: 8px; margin-top: 18px; border-top: 1px solid #dce2ea; }
+.checkin-error { color: #ae2626; font-weight: 700; }
+.checkin-status { text-align: center; font-weight: 800; }
+.checkin-result { text-align: center; border: 3px solid; }
+.checkin-result.success { background: #e9f8ef; border-color: #18864b; }
+.checkin-result.warning { background: #fff6dd; border-color: #d28b00; }
+.checkin-result.error { background: #ffeded; border-color: #c73535; }
+.checkin-result h2 { margin-top: 0; font-size: 1.7rem; }
+.checkin-result h3 { margin: 6px 0 12px; font-size: 1.5rem; }
+.checkin-result p { margin: 5px 0; }
