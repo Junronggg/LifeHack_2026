@@ -684,7 +684,7 @@ function App() {
 
       {/* ---------------- TIMELINE ---------------- */}
       <section id="timeline" className="border-b border-white/10 bg-[#0a0d14]">
-        <div className="mx-auto grid max-w-[1180px] items-center gap-10 px-7 py-[72px] md:grid-cols-[1fr_auto]">
+        <div className="mx-auto max-w-[1180px] px-7 py-[72px]">
           <div>
             <div className={`${eyebrow} mb-4`}>Event timeline</div>
             <h2
@@ -694,9 +694,9 @@ function App() {
               Every briefing, deadline, and milestone in one place.
             </h2>
             <p className="mt-5 max-w-[42em] text-[17px] leading-[1.65] text-slate-300">
-              Scan the official QR code for the complete run of show for 29–30
-              August, including both competition tracks, venue details, live
-              countdowns, and schedule updates.
+              Download the complete run of show for 29–30 August, including both
+              competition tracks, venue details, live countdowns, and schedule
+              updates.
             </p>
             <p className="ff-mono mt-3 text-[11px] uppercase tracking-[0.1em] text-slate-500">
               Schedule is indicative and subject to change · Singapore Time (GMT+8)
@@ -710,26 +710,8 @@ function App() {
               >
                 Download timeline PDF
               </a>
-              <a
-                href="/event-timeline/qr/qr-navy-on-white.png"
-                className={ghostBtn}
-                download
-              >
-                Download QR
-              </a>
             </div>
           </div>
-          <a
-            href="https://lifehack2026.nuscomputing.com/timeline"
-            aria-label="Open the LifeHack 2026 event timeline"
-            className="mx-auto rounded-2xl border border-white/10 bg-white p-4 transition hover:-translate-y-1 hover:border-[#c9964a]/60 md:mx-0"
-          >
-            <img
-              src="/event-timeline/qr/qr-navy-on-white.png"
-              alt="QR code linking to the LifeHack 2026 event timeline"
-              className="h-[190px] w-[190px] sm:h-[220px] sm:w-[220px]"
-            />
-          </a>
         </div>
       </section>
 
@@ -1781,12 +1763,9 @@ function App() {
               </div>
             </div>
           </div>
-          <div className="mt-11 flex flex-wrap justify-between gap-3 border-t border-white/10 pt-6">
+          <div className="mt-11 border-t border-white/10 pt-6">
             <span className="ff-mono text-[11.5px] text-slate-500">
               © 2026 NUS Computing Club
-            </span>
-            <span className="ff-mono text-[11.5px] text-slate-500">
-              Logo &amp; full visual identity — pending
             </span>
           </div>
         </div>
