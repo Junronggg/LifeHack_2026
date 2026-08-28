@@ -706,8 +706,7 @@ function App() {
               <a
                 href="/event-timeline/LifeHack-2026-Timeline.pdf"
                 className={ghostBtn}
-                target="_blank"
-                rel="noopener noreferrer"
+                download="LifeHack-2026-Timeline.pdf"
               >
                 Download timeline PDF
               </a>
