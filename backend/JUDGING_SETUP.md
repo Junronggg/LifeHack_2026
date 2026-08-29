@@ -79,10 +79,14 @@ A blank value is treated as active.
 If the counts are different, stop and correct the Google Sheet before sending
 the portal link to judges.
 
-## 5. Redeploy Apps Script
+## 5. Redeploy the existing check-in Apps Script web app
 
-1. Select **Deploy → Manage deployments**.
-2. Edit the existing web-app deployment.
+Use the Apps Script project attached to the live registration Sheet—the same
+project and public web-app deployment already used by the working check-in
+scanner. Do not create a separate Apps Script project for judging.
+
+1. Select **Deploy → Manage deployments** in that existing project.
+2. Edit the working check-in web-app deployment.
 3. Select **New version**.
 4. Keep **Execute as: Me** and **Who has access: Anyone**.
 5. Click **Deploy**.
