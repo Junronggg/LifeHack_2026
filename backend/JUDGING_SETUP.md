@@ -4,10 +4,16 @@ The judging portal is hosted inside the existing Google Apps Script web app.
 It reads teams from `Main`, reads judge credentials from `Judge Allotment`, and
 writes one row per judge/team to `Judging Results`.
 
-The current scoring form records:
+The current scoring form records five required scores from 0 to 10:
 
-- Overall score from 0 to 100
-- Optional comments
+- Innovation
+- User Experience
+- Technical Feasibility
+- Scalability
+- Trust & Safety
+
+The portal calculates `OverallScore` as the average of those five values. It
+also records optional comments.
 
 A judge may edit a saved score. The existing result row is updated rather than
 duplicated.
@@ -68,12 +74,12 @@ A blank value is treated as active.
 
 1. In the Apps Script function dropdown, select `setupJudgingPortal`.
 2. Click **Run** and approve permissions if Google asks.
-3. Open the execution log. The expected summary from the reviewed workbooks is:
-   - 7 judges
+3. Open the execution log. After adding the three confirmed EcoVolt judges, the expected summary is:
+   - 8 judges
    - 90 teams
    - Consumerism: 2 judges and 30 teams
    - Digital payments: 3 judges and 30 teams
-   - Sustainability: 2 judges and 30 teams
+   - Sustainability: 3 judges and 30 teams
 4. Confirm that a new tab named `Judging Results` was created.
 
 If the counts are different, stop and correct the Google Sheet before sending
@@ -121,9 +127,9 @@ After changing `VITE_JUDGE_SCRIPT_URL`, rebuild and redeploy the main website.
 1. Open the judge URL in an incognito/private browser window.
 2. Log in using one Rezolve AI judge account.
 3. Confirm that exactly the 30 Consumerism teams appear.
-4. Save a test score for one team.
+4. Enter all five 0-10 rubric scores and save one test result.
 5. Confirm that one row appears in `Judging Results` with that judge, team,
-   category, score, comments, and timestamps.
+   category, five rubric scores, calculated overall score, comments, and timestamps.
 6. Edit the same score and confirm the same row updates instead of adding a
    duplicate.
 7. Repeat with one Visa judge and one EcoVolt judge.
@@ -134,8 +140,8 @@ After changing `VITE_JUDGE_SCRIPT_URL`, rebuild and redeploy the main website.
 1. Give every judge the same `?page=judge` link and their own credentials.
 2. Judges log in on a phone, tablet, or laptop.
 3. Each judge sees only teams in their assigned category.
-4. The judge opens a team, enters the score and comments, and presses **Save
-   result**.
+4. The judge opens a team, scores all five criteria from 0 to 10, adds optional
+   comments, and presses **Submit scorecard**.
 5. The organising committee monitors the `Judging Results` tab live.
 6. After judging, download the Google Sheet through **File → Download →
    Microsoft Excel (.xlsx)** if an Excel copy is required.

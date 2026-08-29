@@ -223,7 +223,11 @@ function handleCheckInJsonp(e) {
     } else if (e.parameter.action === "judgeSave") {
       response = judgeSaveScore(e.parameter.token, {
         teamCode: e.parameter.teamCode,
-        overallScore: e.parameter.overallScore,
+        innovation: e.parameter.innovation,
+        userExperience: e.parameter.userExperience,
+        technicalFeasibility: e.parameter.technicalFeasibility,
+        scalability: e.parameter.scalability,
+        trustSafety: e.parameter.trustSafety,
         comments: e.parameter.comments,
       });
     } else if (e.parameter.action === "judgeLogout") {
@@ -1683,7 +1687,39 @@ var JUDGE_TAB = "Judge Allotment";
 var JUDGING_RESULTS_TAB = "Judging Results";
 var JUDGE_SESSION_SECONDS = 21600;
 var JUDGE_MAX_LOGIN_ATTEMPTS = 8;
-var JUDGE_SCORE_MAX = 100;
+var JUDGE_SCORE_MAX = 10;
+var JUDGE_CRITERIA = [
+  {
+    key: "innovation",
+    sheetHeader: "Innovation",
+    label: "Innovation",
+    description: "Novelty of the proposed solution and experience.",
+  },
+  {
+    key: "userExperience",
+    sheetHeader: "User Experience",
+    label: "User Experience",
+    description: "Simplicity and intuitiveness of the end-to-end flow.",
+  },
+  {
+    key: "technicalFeasibility",
+    sheetHeader: "Technical Feasibility",
+    label: "Technical Feasibility",
+    description: "Realistic implementation and integration of the core concepts.",
+  },
+  {
+    key: "scalability",
+    sheetHeader: "Scalability",
+    label: "Scalability",
+    description: "Applicability across users or organisations of different sizes.",
+  },
+  {
+    key: "trustSafety",
+    sheetHeader: "Trust & Safety",
+    label: "Trust & Safety",
+    description: "Clear handling of consent, security, and transparency.",
+  },
+];
 var JUDGE_PROBLEM_TO_CATEGORY = {
   "rezolve ai": "Consumerism",
   "visa": "Digital payments",
@@ -1695,7 +1731,8 @@ var JUDGE_PROBLEM_TO_CATEGORY = {
 var JUDGING_RESULTS_HEADERS = [
   "SubmittedAt", "UpdatedAt", "JudgeUsername", "JudgeName", "JudgeType",
   "ProblemStatement", "Category", "TeamCode", "TeamName",
-  "OverallScore", "Comments",
+  "Innovation", "User Experience", "Technical Feasibility", "Scalability",
+  "Trust & Safety", "OverallScore", "Comments",
 ];
 
 function setupJudgingPortal() {
@@ -1909,13 +1946,28 @@ function judgeSaveScore(token, submission) {
   var session = getJudgeSession_(token);
   var data = submission || {};
   var requestedCode = normalizeTeamCode_(data.teamCode);
-  var score = Number(data.overallScore);
   var comments = String(data.comments || "").trim();
+  var criterionScores = {};
+  var scoreTotal = 0;
 
   if (!requestedCode) throw new Error("Team code is required.");
-  if (!isFinite(score) || score < 0 || score > JUDGE_SCORE_MAX) {
-    throw new Error("Overall score must be between 0 and " + JUDGE_SCORE_MAX + ".");
+  for (var criterionIndex = 0; criterionIndex < JUDGE_CRITERIA.length; criterionIndex++) {
+    var criterion = JUDGE_CRITERIA[criterionIndex];
+    var rawScore = String(data[criterion.key] == null ? "" : data[criterion.key]).trim();
+    var criterionScore = Number(rawScore);
+    if (rawScore === "" || !isFinite(criterionScore) ||
+        criterionScore < 0 || criterionScore > JUDGE_SCORE_MAX) {
+      throw new Error(
+        criterion.label + " must be between 0 and " + JUDGE_SCORE_MAX + "."
+      );
+    }
+    criterionScore = Math.round(criterionScore * 100) / 100;
+    criterionScores[criterion.key] = criterionScore;
+    scoreTotal += criterionScore;
   }
+  var overallScore = Math.round(
+    (scoreTotal / JUDGE_CRITERIA.length) * 100
+  ) / 100;
   if (comments.length > 2000) {
     throw new Error("Comments must be 2,000 characters or fewer.");
   }
@@ -1969,9 +2021,15 @@ function judgeSaveScore(token, submission) {
       Category: session.category,
       TeamCode: team.teamCode,
       TeamName: team.teamName,
-      OverallScore: Math.round(score * 100) / 100,
+      OverallScore: overallScore,
       Comments: comments,
     };
+    for (var recordCriterionIndex = 0;
+         recordCriterionIndex < JUDGE_CRITERIA.length;
+         recordCriterionIndex++) {
+      var recordCriterion = JUDGE_CRITERIA[recordCriterionIndex];
+      record[recordCriterion.sheetHeader] = criterionScores[recordCriterion.key];
+    }
 
     if (existing) {
       var headers = getHeaders(resultsSheet);
@@ -1993,7 +2051,8 @@ function judgeSaveScore(token, submission) {
   return {
     ok: true,
     teamCode: team.teamCode,
-    overallScore: Math.round(score * 100) / 100,
+    criterionScores: criterionScores,
+    overallScore: overallScore,
     comments: comments,
     updatedAt: Utilities.formatDate(
       new Date(),
@@ -2024,6 +2083,13 @@ function buildJudgePortalData_(token, session) {
       category: session.category,
     },
     scoreMaximum: JUDGE_SCORE_MAX,
+    criteria: JUDGE_CRITERIA.map(function (criterion) {
+      return {
+        key: criterion.key,
+        label: criterion.label,
+        description: criterion.description,
+      };
+    }),
     teams: teams.map(function (team) {
       var saved = savedScores[normalizeTeamCode_(team.teamCode)] || null;
       return {
@@ -2131,7 +2197,27 @@ function getJudgeSavedScores_(spreadsheet, username) {
   for (var i = 0; i < results.length; i++) {
     var record = results[i].record;
     if (normalizeJudgeUsername_(record.JudgeUsername) !== username) continue;
+    var criterionScores = {};
+    var hasAllCriteria = true;
+    for (var criterionIndex = 0;
+         criterionIndex < JUDGE_CRITERIA.length;
+         criterionIndex++) {
+      var criterion = JUDGE_CRITERIA[criterionIndex];
+      var rawValue = String(record[criterion.sheetHeader] == null
+        ? ""
+        : record[criterion.sheetHeader]).trim();
+      var numericValue = Number(rawValue);
+      if (rawValue === "" || !isFinite(numericValue)) {
+        hasAllCriteria = false;
+        break;
+      }
+      criterionScores[criterion.key] = numericValue;
+    }
+    // Legacy one-score rows are intentionally treated as unscored so the
+    // judge completes the full rubric before the result is considered final.
+    if (!hasAllCriteria) continue;
     saved[normalizeTeamCode_(record.TeamCode)] = {
+      criterionScores: criterionScores,
       overallScore: Number(record.OverallScore),
       comments: String(record.Comments || ""),
       updatedAt: formatSheetDate_(record.UpdatedAt),

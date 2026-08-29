@@ -58,7 +58,14 @@
       .modal { width: min(100%, 560px); padding: 24px; }
       .modal h2 { margin: 0 0 4px; }
       .modal-team { margin: 0; color: #65758a; }
-      .score-row { display: grid; grid-template-columns: 1fr 120px; align-items: end; gap: 14px; }
+      .rubric-grid { display: grid; margin-top: 14px; }
+      .rubric-item { display: grid; grid-template-columns: 1fr 110px; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid #e8edf3; }
+      .rubric-item label { margin: 0 0 4px; }
+      .rubric-item p { margin: 0; color: #718095; font-size: .78rem; line-height: 1.4; }
+      .rubric-score { display: flex; align-items: center; gap: 7px; color: #718095; font-size: .75rem; }
+      .rubric-score input { text-align: center; font-weight: 850; }
+      .overall { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; padding: 15px 17px; border: 1px solid #f0dfbd; border-radius: 14px; background: #fff8ea; }
+      .overall strong { color: #9c4932; font-size: 1.55rem; }
       .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
       .modal-actions .primary { margin: 0; }
       .save-status { min-height: 22px; margin: 12px 0 0; color: #166534; font-weight: 750; }
@@ -72,7 +79,8 @@
         .team-card { grid-template-columns: 1fr; gap: 13px; }
         .team-action { text-align: left; }
         .team-action button { width: 100%; }
-        .score-row { grid-template-columns: 1fr; }
+        .rubric-item { grid-template-columns: 1fr; }
+        .rubric-score { width: 125px; }
       }
     </style>
   </head>
@@ -126,13 +134,8 @@
         <p id="scoreTeam" class="modal-team"></p>
         <form id="scoreForm">
           <input id="scoreTeamCode" type="hidden">
-          <div class="score-row">
-            <div>
-              <label for="overallScore">Overall score</label>
-              <p class="subtitle">Enter a score from 0 to <span id="scoreMaximum">100</span>.</p>
-            </div>
-            <input id="overallScore" type="number" min="0" max="100" step="0.01" inputmode="decimal" required>
-          </div>
+          <div id="rubricGrid" class="rubric-grid"></div>
+          <div class="overall"><span>Overall score<br><small>Average of all five criteria</small></span><strong><span id="overallPreview">—</span>/10</strong></div>
           <label for="comments">Comments <span class="subtitle">(optional)</span></label>
           <textarea id="comments" maxlength="2000" placeholder="Notes for the organising committee"></textarea>
           <p id="saveStatus" class="save-status" role="status"></p>
@@ -145,7 +148,7 @@
     </div>
 
     <script>
-      var portalState = { token: "", judge: null, teams: [], scoreMaximum: 100 };
+      var portalState = { token: "", judge: null, teams: [], scoreMaximum: 10, criteria: [] };
 
       document.getElementById("loginForm").addEventListener("submit", function (event) {
         event.preventDefault();
@@ -199,8 +202,7 @@
         document.getElementById("judgeName").textContent = data.judge.name;
         document.getElementById("judgeMeta").textContent =
           data.judge.type + " | " + data.judge.problemStatement + " | " + data.judge.category;
-        document.getElementById("scoreMaximum").textContent = data.scoreMaximum;
-        document.getElementById("overallScore").max = data.scoreMaximum;
+        renderRubricInputs();
         renderTeams();
       }
 
@@ -267,17 +269,76 @@
         });
       }
 
+      function renderRubricInputs() {
+        var grid = document.getElementById("rubricGrid");
+        grid.replaceChildren();
+        portalState.criteria.forEach(function (criterion) {
+          var item = document.createElement("div");
+          item.className = "rubric-item";
+          var copy = document.createElement("div");
+          var label = document.createElement("label");
+          label.htmlFor = "score_" + criterion.key;
+          label.textContent = criterion.label;
+          var description = document.createElement("p");
+          description.textContent = criterion.description;
+          copy.appendChild(label);
+          copy.appendChild(description);
+          var score = document.createElement("div");
+          score.className = "rubric-score";
+          var input = document.createElement("input");
+          input.id = "score_" + criterion.key;
+          input.type = "number";
+          input.min = "0";
+          input.max = String(portalState.scoreMaximum);
+          input.step = "0.5";
+          input.inputMode = "decimal";
+          input.required = true;
+          input.addEventListener("input", updateOverallPreview);
+          var maximum = document.createElement("span");
+          maximum.textContent = "/ " + portalState.scoreMaximum;
+          score.appendChild(input);
+          score.appendChild(maximum);
+          item.appendChild(copy);
+          item.appendChild(score);
+          grid.appendChild(item);
+        });
+      }
+
+      function updateOverallPreview() {
+        var values = portalState.criteria.map(function (criterion) {
+          return document.getElementById("score_" + criterion.key).value;
+        });
+        if (!values.length || values.some(function (value) { return value === ""; })) {
+          document.getElementById("overallPreview").textContent = "—";
+          return;
+        }
+        var total = values.reduce(function (sum, value) { return sum + Number(value); }, 0);
+        document.getElementById("overallPreview").textContent =
+          (total / values.length).toFixed(1);
+      }
+
       function openScoreModal(teamCode) {
         var team = portalState.teams.find(function (item) { return item.teamCode === teamCode; });
         if (!team) return;
         document.getElementById("scoreTeamCode").value = team.teamCode;
         document.getElementById("scoreTeam").textContent =
           team.teamCode + (team.teamName ? " | " + team.teamName : "");
-        document.getElementById("overallScore").value = team.saved ? team.saved.overallScore : "";
+        portalState.criteria.forEach(function (criterion) {
+          var savedValue = team.saved && team.saved.criterionScores
+            ? team.saved.criterionScores[criterion.key]
+            : "";
+          document.getElementById("score_" + criterion.key).value =
+            savedValue === undefined ? "" : savedValue;
+        });
+        updateOverallPreview();
         document.getElementById("comments").value = team.saved ? team.saved.comments : "";
         document.getElementById("saveStatus").textContent = "";
         document.getElementById("scoreBackdrop").classList.add("open");
-        setTimeout(function () { document.getElementById("overallScore").focus(); }, 0);
+        setTimeout(function () {
+          if (portalState.criteria.length) {
+            document.getElementById("score_" + portalState.criteria[0].key).focus();
+          }
+        }, 0);
       }
 
       function closeScoreModal() {
@@ -286,7 +347,6 @@
 
       function saveScore() {
         var teamCode = document.getElementById("scoreTeamCode").value;
-        var overallScore = document.getElementById("overallScore").value;
         var comments = document.getElementById("comments").value;
         var button = document.getElementById("saveButton");
         var status = document.getElementById("saveStatus");
@@ -294,12 +354,18 @@
         status.style.color = "#166534";
         setBusy(button, true, "Saving...");
 
+        var submission = { teamCode: teamCode, comments: comments };
+        portalState.criteria.forEach(function (criterion) {
+          submission[criterion.key] = document.getElementById("score_" + criterion.key).value;
+        });
+
         google.script.run
           .withSuccessHandler(function (result) {
             setBusy(button, false, "Save result");
             var team = portalState.teams.find(function (item) { return item.teamCode === result.teamCode; });
             if (team) {
               team.saved = {
+                criterionScores: result.criterionScores,
                 overallScore: result.overallScore,
                 comments: result.comments,
                 updatedAt: result.updatedAt,
@@ -315,17 +381,13 @@
             status.textContent = failureMessage(failure);
             status.style.color = "#b42318";
           })
-          .judgeSaveScore(portalState.token, {
-            teamCode: teamCode,
-            overallScore: overallScore,
-            comments: comments,
-          });
+          .judgeSaveScore(portalState.token, submission);
       }
 
       function logout() {
         var token = portalState.token;
         sessionStorage.removeItem("lifehackJudgeToken");
-        portalState = { token: "", judge: null, teams: [], scoreMaximum: 100 };
+        portalState = { token: "", judge: null, teams: [], scoreMaximum: 10, criteria: [] };
         document.getElementById("portalView").hidden = true;
         document.getElementById("loginView").hidden = false;
         if (token) google.script.run.judgeLogout(token);
