@@ -100,14 +100,21 @@ The judge URL is the Apps Script URL with `?page=judge`, for example:
 https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec?page=judge
 ```
 
-The production LifeHack website also redirects its short judge route to this
-portal when `VITE_JUDGE_PORTAL_URL` is configured:
+The production LifeHack website hosts the judge interface itself and uses Apps
+Script only as the background Sheet API. Configure `VITE_JUDGE_SCRIPT_URL`
+with the deployment's base `/exec` URL (without `?page=judge`):
+
+```text
+VITE_JUDGE_SCRIPT_URL=https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec
+```
+
+Judges then remain on this address throughout login and scoring:
 
 ```text
 https://lifehack2026.nuscomputing.com/?page=judge
 ```
 
-After changing `VITE_JUDGE_PORTAL_URL`, rebuild and redeploy the main website.
+After changing `VITE_JUDGE_SCRIPT_URL`, rebuild and redeploy the main website.
 
 ## 6. Test before sharing
 

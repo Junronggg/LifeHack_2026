@@ -196,7 +196,7 @@ function doGet(e) {
  */
 function handleCheckInJsonp(e) {
   var callback = String(e.parameter.callback || "");
-  if (!/^lifehackCheckIn_[A-Za-z0-9_]{1,80}$/.test(callback)) {
+  if (!/^lifehack(?:CheckIn|Judge)_[A-Za-z0-9_]{1,80}$/.test(callback)) {
     return jsonOut({ ok: false, error: "Invalid callback." });
   }
 
@@ -210,6 +210,24 @@ function handleCheckInJsonp(e) {
         e.parameter.pin,
         e.parameter.staffName
       );
+    } else if (e.parameter.action === "judgeChallenge") {
+      response = createJudgeLoginChallenge(e.parameter.username);
+    } else if (e.parameter.action === "judgeLogin") {
+      response = judgeLoginWithProof(
+        e.parameter.username,
+        e.parameter.challengeId,
+        e.parameter.proof
+      );
+    } else if (e.parameter.action === "judgeRefresh") {
+      response = judgeRefresh(e.parameter.token);
+    } else if (e.parameter.action === "judgeSave") {
+      response = judgeSaveScore(e.parameter.token, {
+        teamCode: e.parameter.teamCode,
+        overallScore: e.parameter.overallScore,
+        comments: e.parameter.comments,
+      });
+    } else if (e.parameter.action === "judgeLogout") {
+      response = judgeLogout(e.parameter.token);
     } else {
       throw new Error("Unknown check-in action.");
     }
@@ -1746,6 +1764,80 @@ function previewJudgingPortal() {
   return summary;
 }
 
+/**
+ * One-time challenge used by the LifeHack-domain judging UI. The password
+ * never appears in a cross-origin URL: the browser sends an HMAC proof tied to
+ * a short-lived nonce, and each challenge can be used only once.
+ */
+function createJudgeLoginChallenge(username) {
+  var normalizedUsername = normalizeJudgeUsername_(username);
+  if (!normalizedUsername) throw new Error("Enter your username.");
+
+  var challengeId = Utilities.getUuid();
+  var nonce = Utilities.getUuid().replace(/-/g, "") +
+    Utilities.getUuid().replace(/-/g, "");
+  CacheService.getScriptCache().put(
+    "judge_challenge_" + challengeId,
+    JSON.stringify({ username: normalizedUsername, nonce: nonce }),
+    300
+  );
+  return { ok: true, challengeId: challengeId, nonce: nonce };
+}
+
+function judgeLoginWithProof(username, challengeId, proof) {
+  var normalizedUsername = normalizeJudgeUsername_(username);
+  var cleanChallengeId = String(challengeId || "").trim();
+  var cleanProof = String(proof || "").trim().toLowerCase();
+  if (!normalizedUsername || !/^[a-f0-9-]{30,50}$/i.test(cleanChallengeId) ||
+      !/^[a-f0-9]{64}$/.test(cleanProof)) {
+    throw new Error("Incorrect username or password.");
+  }
+
+  var cache = CacheService.getScriptCache();
+  var challengeKey = "judge_challenge_" + cleanChallengeId;
+  var serializedChallenge = cache.get(challengeKey);
+  cache.remove(challengeKey);
+  if (!serializedChallenge) {
+    throw new Error("Login request expired. Please try again.");
+  }
+
+  var challenge = JSON.parse(serializedChallenge);
+  if (challenge.username !== normalizedUsername) {
+    throw new Error("Incorrect username or password.");
+  }
+
+  var attemptKey = "judge_attempt_" + digestText_(normalizedUsername);
+  var attempts = Number(cache.get(attemptKey) || 0);
+  if (attempts >= JUDGE_MAX_LOGIN_ATTEMPTS) {
+    throw new Error("Too many login attempts. Please wait 10 minutes.");
+  }
+
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var judgeSheet = spreadsheet.getSheetByName(JUDGE_TAB);
+  if (!judgeSheet) throw new Error("Judging has not been set up yet.");
+  var judges = getJudgeAccounts_(judgeSheet);
+  var judge = null;
+  for (var i = 0; i < judges.length; i++) {
+    if (judges[i].username === normalizedUsername && judges[i].active) {
+      judge = judges[i];
+      break;
+    }
+  }
+
+  var valid = judge && constantTimeEqual_(
+    cleanProof,
+    hmacSha256Hex_(challenge.nonce, judge.password)
+  );
+  if (!valid) {
+    cache.put(attemptKey, String(attempts + 1), 600);
+    Utilities.sleep(350);
+    throw new Error("Incorrect username or password.");
+  }
+
+  cache.remove(attemptKey);
+  return createJudgeSession_(judge);
+}
+
 function judgeLogin(username, password) {
   var normalizedUsername = normalizeJudgeUsername_(username);
   var suppliedPassword = String(password || "");
@@ -1784,6 +1876,11 @@ function judgeLogin(username, password) {
   }
 
   cache.remove(attemptKey);
+  return createJudgeSession_(judge);
+}
+
+function createJudgeSession_(judge) {
+  var cache = CacheService.getScriptCache();
   var category = getJudgeCategory_(judge.problemStatement);
   var token = Utilities.getUuid();
   var session = {
@@ -2101,6 +2198,29 @@ function digestText_(value) {
     var normalized = byte < 0 ? byte + 256 : byte;
     return ("0" + normalized.toString(16)).slice(-2);
   }).join("").slice(0, 24);
+}
+
+function hmacSha256Hex_(message, secret) {
+  var signature = Utilities.computeHmacSha256Signature(
+    String(message || ""),
+    String(secret || ""),
+    Utilities.Charset.UTF_8
+  );
+  return signature.map(function (byte) {
+    var normalized = byte < 0 ? byte + 256 : byte;
+    return ("0" + normalized.toString(16)).slice(-2);
+  }).join("");
+}
+
+function constantTimeEqual_(left, right) {
+  var a = String(left || "");
+  var b = String(right || "");
+  var difference = a.length ^ b.length;
+  var length = Math.max(a.length, b.length);
+  for (var i = 0; i < length; i++) {
+    difference |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  }
+  return difference === 0;
 }
 
 function formatSheetDate_(value) {
