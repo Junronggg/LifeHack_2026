@@ -24,6 +24,16 @@ type Challenge = { ok: boolean; error?: string; challengeId: string; nonce: stri
 
 const rubricPreview = ['Innovation', 'User Experience', 'Technical Feasibility', 'Scalability', 'Trust & Safety']
 
+function validatePortalData(data: PortalData) {
+  if (!data?.judge || !Array.isArray(data.teams) ||
+      !Array.isArray(data.criteria) || data.criteria.length !== 5) {
+    throw new Error(
+      'The judging server is still using an older version. Refresh after the latest Apps Script deployment is published.',
+    )
+  }
+  return data
+}
+
 function jsonpRequest<T extends { ok?: boolean; error?: string }>(params: Record<string, string>): Promise<T> {
   const endpoint = import.meta.env.VITE_JUDGE_SCRIPT_URL
   if (!endpoint) return Promise.reject(new Error('VITE_JUDGE_SCRIPT_URL is not configured.'))
@@ -69,8 +79,12 @@ export default function JudgePortal() {
   useEffect(() => {
     const token = sessionStorage.getItem('lifehackJudgeToken') || ''
     if (!token) return
-    jsonpRequest<PortalData>({ action: 'judgeRefresh', token }).then(setPortal)
-      .catch(() => sessionStorage.removeItem('lifehackJudgeToken'))
+    jsonpRequest<PortalData>({ action: 'judgeRefresh', token })
+      .then((data) => setPortal(validatePortalData(data)))
+      .catch((failure) => {
+        sessionStorage.removeItem('lifehackJudgeToken')
+        setError(failure instanceof Error ? failure.message : String(failure))
+      })
   }, [])
 
   const activeTeam = portal?.teams.find((team) => team.teamCode === activeTeamCode) || null
@@ -93,7 +107,7 @@ export default function JudgePortal() {
       const normalizedUsername = username.trim().toLowerCase()
       const challenge = await jsonpRequest<Challenge>({ action: 'judgeChallenge', username: normalizedUsername })
       const proof = await createPasswordProof(password, challenge.nonce)
-      const data = await jsonpRequest<PortalData>({ action: 'judgeLogin', username: normalizedUsername, challengeId: challenge.challengeId, proof })
+      const data = validatePortalData(await jsonpRequest<PortalData>({ action: 'judgeLogin', username: normalizedUsername, challengeId: challenge.challengeId, proof }))
       sessionStorage.setItem('lifehackJudgeToken', data.token)
       setPortal(data); setPassword('')
     } catch (failure) { setError(failure instanceof Error ? failure.message : String(failure)) }
